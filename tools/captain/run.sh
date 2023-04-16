@@ -253,6 +253,10 @@ for FUZZER in "${FUZZERS[@]}"; do
             continue
         fi
 
+        if [ -n "$JUST_BUILD" ]; then
+            continue
+        fi
+
         PROGRAMS=($(get_var_or_default $FUZZER $TARGET 'PROGRAMS'))
         for PROGRAM in "${PROGRAMS[@]}"; do
             export PROGRAM
