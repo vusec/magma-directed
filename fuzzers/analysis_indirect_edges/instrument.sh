@@ -31,13 +31,23 @@ for P in "${PROGRAMS[@]}"; do
     get-bc "./$P"
 done
 
+export INDICALLS_PASS="$OUT/IndirectBranchCounter.so"
 for P in "${PROGRAMS[@]}"; do
     INDIRECT_BRANCH_COUNTER_OUTPUT="$P-indirect-branches.txt" \
         opt \
-            -load-pass-plugin "$OUT/IndirectBranchCounter.so" \
+            -load-pass-plugin "$INDICALLS_PASS" \
             -passes='indirect-branch-counter' \
-            -o "$P.opt.bc" "$P.bc"
+            -o /dev/null "$P.bc"
 done
+
+export INDICALLS_RTLIB="$OUT/libsancov_dumper.a"
+# re-use magma built above
+# env CC=clang CXX=clang++ "$MAGMA/build.sh"
+CC="$OUT/indicalls_cc"
+CXX="$OUT/indicalls_cxx"
+OUT="$OUT/indicalls"
+mkdir -p "$OUT"
+"$TARGET/build.sh"
 
 # NOTE: We pass $OUT directly to the target build.sh script, since the artifact
 #       itself is the fuzz target. In the case of Angora, we might need to

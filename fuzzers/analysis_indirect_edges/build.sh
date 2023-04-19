@@ -24,11 +24,15 @@ CXXFLAGS="$CXXFLAGS -fno-discard-value-names"
 $CC $CFLAGS -c "$FUZZER/src/StandaloneFuzzTargetMain.c" -fPIC \
     -o "$OUT/StandaloneFuzzTargetMain.o"
 
-# compile llvm pass
+unset CC CXX CFLAGS CXXFLAGS
+CC=clang
+CXX=clang++
+
 dir="$(mktemp -d)"
+cmake -GNinja -DCMAKE_BUILD_TYPE=release -S "$FUZZER" -B "$dir"
 pushd "$dir"
-cmake -GNinja -DCMAKE_BUILD_TYPE=Release "$FUZZER/pass"
 ninja
-mv "IndirectBranchCounter.so" "$OUT/"
+mv wrapper/indicalls_cc pass/IndirectBranchCounter.so libsancov_dumper.a libsancov_dumper.so "$OUT/"
+cp "$OUT/indicalls_cc" "$OUT/indicalls_cxx"
 popd
 rm -rf "$dir"

@@ -4,16 +4,18 @@ set -e
 export DEBIAN_FRONTEND=noninteractive
 
 apt-get update && \
-    apt-get install -y git wget gnupg lsb-release software-properties-common \
-                       ninja-build
+    apt-get install -y git wget curl gnupg lsb-release software-properties-common \
+                       ninja-build \
+                       vim
 
-wget https://apt.llvm.org/llvm.sh
+alias curl="curl --proto '=https' --tlsv1.2 -sSf"
+
+curl -O https://apt.llvm.org/llvm.sh
 chmod +x llvm.sh
-./llvm.sh 13
-apt-get install -y libc++-13-dev libc++abi-13-dev
+./llvm.sh 13 all
 rm -f llvm.sh
 
-bash -c "$(wget -O- https://apt.kitware.com/kitware-archive.sh)"
+bash -c "$(curl https://apt.kitware.com/kitware-archive.sh)"
 apt-get install -y cmake
 
 apt-get clean -y
@@ -50,4 +52,4 @@ update-alternatives \
 update-alternatives \
   --install /usr/bin/opt                 opt                  /usr/bin/opt-13     20
 
-wget -qO- https://go.dev/dl/go1.20.3.linux-amd64.tar.gz | tar xz -C /usr/local/ --strip-components=1
+curl -L https://go.dev/dl/go1.20.3.linux-amd64.tar.gz | tar xz -C /usr/local/ --strip-components=1
