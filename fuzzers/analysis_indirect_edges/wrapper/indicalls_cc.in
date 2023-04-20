@@ -104,7 +104,7 @@ COMPILER_FLAGS_EARLY = []
 # These flags should be injected always when compiling
 COMPILER_FLAGS = [
     "-g",  # required for targeting
-    "-flto",
+    # "-flto",
     "-fsanitize-coverage=trace-pc-guard,indirect-calls",
 ]
 
