@@ -40,6 +40,7 @@ for P in "${PROGRAMS[@]}"; do
             -o /dev/null "$P.bc"
 done
 
+export SANCOV_DONT=1
 export INDICALLS_RTLIB="$OUT/libsancov_dumper.a"
 # re-use magma built above
 # env CC=clang CXX=clang++ "$MAGMA/build.sh"
