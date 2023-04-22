@@ -1,0 +1,105 @@
+#!/usr/bin/env python3
+import os
+import shutil
+import subprocess as sp
+from pathlib import Path
+import tempfile
+from typing import List
+
+OUT = Path(os.environ["OUT"])
+ANALYSIS_OUT = Path(os.environ["ANALYSIS_OUT"])
+SHARED = Path(os.environ["SHARED"])
+REAL_FUZZER = os.environ["REAL_FUZZER"]
+PROGRAM = os.environ["PROGRAM"]
+HERE = Path(__file__).resolve().parent
+
+
+def main() -> int:
+    analysis_data = ANALYSIS_OUT / "data"
+    analysis_data.mkdir(parents=True)
+
+    p = sp.run(
+        [str(HERE / "findings_all.sh"), REAL_FUZZER, "1"],
+        check=True,
+        stdout=sp.PIPE,
+        stderr=sp.PIPE,
+    )
+
+    tempdir = Path(tempfile.tempdir or "/tmp")
+    cov_fname = tempdir / "cov.csv"
+    indicalls_fname = tempdir / "indicalls.csv"
+    sancov_files = [cov_fname, indicalls_fname]
+
+    env = os.environ.copy()
+    env["OUT"] = str(OUT / "indicalls")
+    env["SANCOV_OUT_FILE"] = str(cov_fname)
+    env["SANCOV_INDICALLS_OUT_FILE"] = str(indicalls_fname)
+
+    fnames = p.stdout.decode("utf-8").splitlines()
+    for fname_i, fname in enumerate(sorted(fnames)):
+        rm(sancov_files)
+
+        if fname_i % 30 == 0:
+            p = sp.run(["pkill", "-9", PROGRAM])
+            print(f"[!] pkill returned {p.returncode}")
+
+        print(f"[+] {fname_i+1:8d} / {len(fnames)} {fname}")
+        fname = Path(fname)
+        if not fname.is_file():
+            print(f"    skipping, not a file")
+
+        p = sp.run(
+            [str(HERE / "runonce_all.sh"), REAL_FUZZER, str(fname)],
+            env=env,
+            stdout=sp.DEVNULL,
+            stderr=sp.DEVNULL,
+        )
+
+        print(f"    exit code = {p.returncode}")
+
+        files = []
+        for f in sancov_files:
+            if f.exists():
+                nlines = len(f.read_text().splitlines())
+                print(f"    {f} : {nlines}")
+                if nlines > 0:
+                    files.append(f)
+            else:
+                print(f"    {f} : n/a")
+
+        if len(files) == 0:
+            print("    skipping, empty files")
+            continue
+
+        tc_dir = analysis_data / fname.name
+        tc_dir.mkdir()
+        for f in files:
+            shutil.copyfile(f, tc_dir / f.name)
+
+    rm(sancov_files)
+
+    p = sp.run(
+        [
+            "tar",
+            "-czf",
+            str(ANALYSIS_OUT / "ball.tar.gz"),
+            "-C",
+            str(analysis_data),
+            ".",
+        ]
+    )
+
+    if p.returncode != 0:
+        print(f"could not create archive")
+
+    return 0
+
+
+def rm(files: List[Path]):
+    for f in files:
+        if f.exists():
+            f.unlink()
+
+
+if __name__ == "__main__":
+    exit(main())
