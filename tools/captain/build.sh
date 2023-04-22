@@ -2,7 +2,7 @@
 
 ##
 # Pre-requirements:
-# - env FUZZER: fuzzer name (from fuzzers/)
+# - 1 or env FUZZER: fuzzer name (from fuzzers/)
 # - env TARGET: target name (from targets/)
 # + env MAGMA: path to magma root (default: ../../)
 # + env ISAN: if set, build the benchmark with ISAN/fatal canaries (default:
@@ -10,6 +10,8 @@
 # + env HARDEN: if set, build the benchmark with hardened canaries (default:
 #       unset)
 ##
+
+FUZZER=${1:-$FUZZER}
 
 if [ -z $FUZZER ] || [ -z $TARGET ]; then
     echo '$FUZZER and $TARGET must be specified as environment variables.'
