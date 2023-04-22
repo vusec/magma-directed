@@ -63,7 +63,8 @@ fi
 
 PARALLEL_FILE="$TMPDIR/parallel.txt"
 truncate -s0 "$PARALLEL_FILE"
-declare -A BUILT_IMAGES
+BUILT_IMAGES="$TMPDIR/built_images.txt"
+truncate -s0 "$BUILT_IMAGES"
 export FUZZER TARGET PROGRAM ARGS CID SHARED
 
 find_subdirs() { find "$1" -mindepth 1 -maxdepth 1 -type d; }
@@ -75,13 +76,13 @@ find_subdirs "$ARDIR" | while read -r FUZZERDIR; do
 
         # build the Docker image
         IMG_NAME="magma/$ANALYSIS/$TARGET"
-        if [ -z "$SKIP_BUILDS" ] && [ -z "${BUILT_IMAGES[$TARGET]}" ]; then
+        if [ -z "$SKIP_BUILDS" ] && ! grep -q "$IMG_NAME"; then
             echo_time "Building $IMG_NAME"
             if ! "$MAGMA"/tools/captain/build.sh "$ANALYSIS" &>"${LOGDIR}/${ANALYSIS}_${TARGET}_build.log"; then
                 echo_time "Failed to build $IMG_NAME. Check build log for info."
                 continue
             fi
-            BUILT_IMAGES[$TARGET]=yes
+            echo "$IMG_NAME" >>"$BUILT_IMAGES"
         fi
 
         if [ -n "$JUST_BUILD" ]; then
