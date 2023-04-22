@@ -1,3 +1,3 @@
 [submodule "fuzzers/analysis_indirect_edges/sancov-dumper"]
 	path = fuzzers/analysis_indirect_edges/sancov-dumper
-	url = git@github.com:acidghost/sancov-dumper.git
+	url = https://github.com/acidghost/sancov-dumper.git
