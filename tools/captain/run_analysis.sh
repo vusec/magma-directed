@@ -76,7 +76,7 @@ find_subdirs "$ARDIR" | while read -r FUZZERDIR; do
 
         # build the Docker image
         IMG_NAME="magma/$ANALYSIS/$TARGET"
-        if [ -z "$SKIP_BUILDS" ] && ! grep -q "$IMG_NAME"; then
+        if [ -z "$SKIP_BUILDS" ] && ! grep -q "$IMG_NAME" "$BUILT_IMAGES"; then
             echo_time "Building $IMG_NAME"
             if ! "$MAGMA"/tools/captain/build.sh "$ANALYSIS" &>"${LOGDIR}/${ANALYSIS}_${TARGET}_build.log"; then
                 echo_time "Failed to build $IMG_NAME. Check build log for info."
