@@ -31,7 +31,6 @@ def main() -> int:
     sancov_files = [cov_fname, indicalls_fname]
 
     env = os.environ.copy()
-    env["OUT"] = str(OUT / "indicalls")
     env["SANCOV_OUT_FILE"] = str(cov_fname)
     env["SANCOV_INDICALLS_OUT_FILE"] = str(indicalls_fname)
 
@@ -49,29 +48,30 @@ def main() -> int:
             print(f"    skipping, not a file")
 
         p = sp.run(
-            [str(HERE / "runonce_all.sh"), REAL_FUZZER, str(fname)],
+            [str(HERE / "runonce.sh"), str(fname)],
             env=env,
             stdout=sp.DEVNULL,
             stderr=sp.DEVNULL,
         )
 
-        print(f"    exit code = {p.returncode}")
+        print(f"    exit {p.returncode}")
 
         files = []
         for f in sancov_files:
             if f.exists():
                 nlines = len(f.read_text().splitlines())
-                print(f"    {f} : {nlines}")
+                print(f"    {f.name:14s} : {nlines}")
                 if nlines > 0:
                     files.append(f)
             else:
-                print(f"    {f} : n/a")
+                print(f"    {f.name:14s} : n/a")
 
         if len(files) == 0:
             print("    skipping, empty files")
             continue
 
         tc_dir = analysis_data / fname.name
+        # XXX: fails if testcases like queue/id:1 and crashes/id:1
         tc_dir.mkdir()
         for f in files:
             shutil.copyfile(f, tc_dir / f.name)
