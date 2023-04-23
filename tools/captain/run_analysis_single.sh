@@ -73,6 +73,7 @@ fi
 set -x
 container_id=$(
     docker run -dt --entrypoint bash "$flag_mount" \
+        --label="magma/$ANALYSIS/$FUZZER/$TARGET/$PROGRAM" \
         --env=PROGRAM="$PROGRAM" --env=ARGS="$ARGS" \
         --env=REAL_FUZZER="$FUZZER" \
         --env=ANALYSIS_OUT=/magma_out/analysis_out \
@@ -84,7 +85,9 @@ echo_time "Container for $ANALYSIS/$FUZZER/$TARGET/$PROGRAM started in $containe
 docker logs -f "$container_id" &
 exit_code=$(docker wait "$container_id")
 if [ "$exit_code" != 0 ]; then
+    echo_time "Container exit code $exit_code"
     exit "$exit_code"
 fi
 
+echo_time "Copying analysis output into $ANALYSIS_OUT/ball.tar.gz"
 docker cp "$container_id:/magma_out/analysis_out/ball.tar.gz" "$ANALYSIS_OUT/ball.tar.gz"
