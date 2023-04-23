@@ -67,11 +67,11 @@ BUILT_IMAGES="$TMPDIR/built_images.txt"
 truncate -s0 "$BUILT_IMAGES"
 export FUZZER TARGET PROGRAM ARGS CID SHARED
 
-find_subdirs() { find "$1" -mindepth 1 -maxdepth 1 -type d; }
+find_subdirs() { find "$1" -mindepth 1 -maxdepth 1 -type d -print0 | sort -z ; }
 
-find_subdirs "$ARDIR" | while read -r FUZZERDIR; do
+find_subdirs "$ARDIR" | while read -r -d '' FUZZERDIR; do
     FUZZER="$(basename "$FUZZERDIR")"
-    find_subdirs "$FUZZERDIR" | while read -r TARGETDIR; do
+    find_subdirs "$FUZZERDIR" | while read -r -d '' TARGETDIR; do
         TARGET="$(basename "$TARGETDIR")"
 
         # build the Docker image
@@ -89,10 +89,10 @@ find_subdirs "$ARDIR" | while read -r FUZZERDIR; do
             continue
         fi
 
-        find_subdirs "$TARGETDIR" | while read -r PROGRAMDIR; do
+        find_subdirs "$TARGETDIR" | while read -r -d '' PROGRAMDIR; do
             PROGRAM="$(basename "$PROGRAMDIR")"
             ARGS="$(get_var_or_default "$FUZZER" "$TARGET" "$PROGRAM" 'ARGS')"
-            find_subdirs "$PROGRAMDIR" | while read -r CAMPAIGNDIR; do
+            find_subdirs "$PROGRAMDIR" | while read -r -d '' CAMPAIGNDIR; do
                 CID="$(basename "$CAMPAIGNDIR")"
                 SHARED="$TMPDIR/$FUZZER/$TARGET/$PROGRAM/$CID"
 
