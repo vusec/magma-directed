@@ -6,6 +6,7 @@ from pathlib import Path
 import tempfile
 from typing import List
 
+MAGMA = Path(os.environ["MAGMA"])
 OUT = Path(os.environ["OUT"])
 ANALYSIS_OUT = Path(os.environ["ANALYSIS_OUT"])
 SHARED = Path(os.environ["SHARED"])
@@ -19,7 +20,7 @@ def main() -> int:
     analysis_data.mkdir(parents=True)
 
     p = sp.run(
-        [str(HERE / "findings_all.sh"), REAL_FUZZER, "1"],
+        [str(MAGMA / "all_findings.sh"), REAL_FUZZER, "1"],
         check=True,
         stdout=sp.PIPE,
         stderr=sp.PIPE,

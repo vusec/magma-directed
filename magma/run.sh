@@ -24,8 +24,9 @@ mkdir -p "$MONITOR"
 # change working directory to somewhere accessible by the fuzzer and target
 cd "$SHARED"
 
+CORPUS="$TARGET/corpus/$PROGRAM"
 # prune the seed corpus for any fault-triggering test-cases
-for seed in "$TARGET/corpus/$PROGRAM"/*; do
+for seed in "$CORPUS"/*; do
     out="$("$MAGMA"/runonce.sh "$seed")"
     code=$?
 
@@ -36,7 +37,7 @@ for seed in "$TARGET/corpus/$PROGRAM"/*; do
 done
 
 shopt -s nullglob
-seeds=("$1"/*)
+seeds=("$CORPUS"/*)
 shopt -u nullglob
 if [ ${#seeds[@]} -eq 0 ]; then
     echo "No seeds remaining! Campaign will not be launched."
@@ -70,11 +71,12 @@ echo "Campaign launched at $(date '+%F %R')"
 
 timeout $TIMEOUT "$FUZZER/run.sh" | \
     multilog n2 s$LOGSIZE "$SHARED/log"
+code=$?
 
 if [ -f "$SHARED/log/current" ]; then
     cat "$SHARED/log/current"
 fi
 
-echo "Campaign terminated at $(date '+%F %R')"
+echo "Campaign terminated at $(date '+%F %R') (exit code $code)"
 
 kill $(jobs -p)

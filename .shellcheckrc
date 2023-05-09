@@ -1,0 +1,2 @@
+disable=SC2016,SC2164
+external-sources=true

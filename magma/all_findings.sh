@@ -72,6 +72,21 @@ symcc_afl)
     fi
     find ${CRASH_DIRS[@]} -type f -name 'id:*'
     ;;
+aflgo_new)
+    MODE=${1:-0}
+    CRASH_DIR="$SHARED/findings/crashes"
+    QUEUE_DIR="$SHARED/findings/queue"
+    if [ ! -d "$CRASH_DIR" ]; then
+        exit 1
+    fi
+    find "$CRASH_DIR" -type f
+    if [ "$MODE" = 0 ]; then
+        exit
+    elif [ ! -d "$QUEUE_DIR" ]; then
+        exit 1
+    fi
+    find "$QUEUE_DIR" -maxdepth 1 -type f \! -name '.*'
+    ;;
 *)
     echo >&2 "fuzzer $ARG is not recognized"
     exit 1

@@ -18,57 +18,59 @@
 
 cleanup() {
     if [ ! -t 1 ]; then
-        docker rm -f $container_id &> /dev/null
+        docker rm -f "$container_id" &>/dev/null
     fi
     exit 0
 }
 
 trap cleanup EXIT SIGINT SIGTERM
 
-if [ -z $FUZZER ] || [ -z $TARGET ] || [ -z $PROGRAM ]; then
+if [ -z "$FUZZER" ] || [ -z "$TARGET" ] || [ -z "$PROGRAM" ]; then
     echo '$FUZZER, $TARGET, and $PROGRAM must be specified as' \
-         'environment variables.'
+        'environment variables.'
     exit 1
 fi
 
-MAGMA=${MAGMA:-"$(cd "$(dirname "${BASH_SOURCE[0]}")/../../" >/dev/null 2>&1 \
-    && pwd)"}
+MAGMA=${MAGMA:-"$(cd "$(dirname "${BASH_SOURCE[0]}")/../../" >/dev/null 2>&1 && pwd)"}
 export MAGMA
 source "$MAGMA/tools/captain/common.sh"
 
-IMG_NAME="magma/$FUZZER/$TARGET"
+IMG_NAME=$(magma_image_name)
+flags=(--cap-add=SYS_PTRACE --security-opt seccomp=unconfined
+    --env=PROGRAM="$PROGRAM" --env=ARGS="$ARGS"
+    --env=FUZZARGS="$FUZZARGS" --env=POLL="$POLL"
+    --env=TIMEOUT="$TIMEOUT")
 
-if [ ! -z $AFFINITY ]; then
-    flag_aff="--cpuset-cpus=$AFFINITY --env=AFFINITY=$AFFINITY"
+if [ -n "$AFFINITY" ]; then
+    flags+=(--cpuset-cpus="$AFFINITY" --env=AFFINITY="$AFFINITY")
 fi
 
-if [ ! -z "$ENTRYPOINT" ]; then
-    flag_ep="--entrypoint=$ENTRYPOINT"
+if [ -n "$ENTRYPOINT" ]; then
+    flags+=(--entrypoint="$ENTRYPOINT")
 fi
 
-if [ ! -z "$SHARED" ]; then
+if [ -n "$SHARED" ]; then
     SHARED="$(realpath "$SHARED")"
     flag_volume="--volume=$SHARED:/magma_shared"
+    if docker --version 2>&1 | grep -q -i podman; then
+        flag_volume="$flag_volume:U,Z"
+    fi
+    flags+=("$flag_volume")
 fi
 
 if [ -t 1 ]; then
-    docker run -it $flag_volume \
-        --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
-        --env=PROGRAM="$PROGRAM" --env=ARGS="$ARGS" \
-        --env=FUZZARGS="$FUZZARGS" --env=POLL="$POLL" --env=TIMEOUT="$TIMEOUT" \
-        $flag_aff $flag_ep "$IMG_NAME"
+    set -x
+    docker run -it "${flags[@]}" "$IMG_NAME"
+    set +x
 else
+    set -x
     container_id=$(
-    docker run -dt $flag_volume \
-        --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
-        --env=PROGRAM="$PROGRAM" --env=ARGS="$ARGS" \
-        --env=FUZZARGS="$FUZZARGS" --env=POLL="$POLL" --env=TIMEOUT="$TIMEOUT" \
-        --network=none \
-        $flag_aff $flag_ep "$IMG_NAME"
+        docker run -dt "${flags[@]}" --network=none "$IMG_NAME"
     )
-    container_id=$(cut -c-12 <<< $container_id)
-    echo_time "Container for $FUZZER/$TARGET/$PROGRAM started in $container_id"
+    set +x
+    container_id=$(cut -c-12 <<<"$container_id")
+    echo_time "Container for $FUZZER/$TARGET${BUG:+/$BUG}/$PROGRAM started in $container_id"
     docker logs -f "$container_id" &
-    exit_code=$(docker wait $container_id)
-    exit $exit_code
+    exit_code=$(docker wait "$container_id")
+    exit "$exit_code"
 fi

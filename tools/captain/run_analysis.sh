@@ -4,10 +4,10 @@
 # Pre-requirements:
 # + $1: path to captainrc (default: ./captainrc)
 # + env ANALYSIS: analysis to run
-# + env EXTRACT: path to extraction script (default: captain/extract.sh)
 ##
 
 cleanup() {
+    sudo chown -R "$(id -u "$USER"):$(id -g "$USER")" "$TMPDIR"
     rm -rf "$TMPDIR"
 }
 
@@ -19,13 +19,12 @@ fi
 
 # load the configuration file (captainrc)
 set -a
-# shellcheck source=/dev/null
+# shellcheck source=tools/captain/captainrc
 source "$1"
 set +a
 
 MAGMA=${MAGMA:-"$(cd "$(dirname "${BASH_SOURCE[0]}")/../../" >/dev/null 2>&1 && pwd)"}
 export MAGMA
-# shellcheck source=tools/captain/common.sh
 source "$MAGMA/tools/captain/common.sh"
 
 has_errors=0
@@ -57,7 +56,7 @@ mkdir -p "$POCDIR"
 mkdir -p "$TMPDIR"
 
 if [ -z "$ARDIR" ] || [ ! -d "$ARDIR" ]; then
-    echo "Invalid archive directory!"
+    echo >&2 "Invalid archive directory!"
     exit 1
 fi
 
@@ -67,18 +66,61 @@ BUILT_IMAGES="$TMPDIR/built_images.txt"
 truncate -s0 "$BUILT_IMAGES"
 export FUZZER TARGET PROGRAM ARGS CID SHARED
 
-find_subdirs() { find "$1" -mindepth 1 -maxdepth 1 -type d -print0 | sort -z ; }
+find_subdirs() { find "$1" -mindepth 1 -maxdepth 1 -type d -print0 | sort -z; }
+
+iterate_programs() {
+    while read -r -d '' PROGRAMDIR; do
+        PROGRAM="$(basename "$PROGRAMDIR")"
+        ARGS="$(get_var_or_default "$FUZZER" "$TARGET" "$PROGRAM" ARGS)"
+        while read -r -d '' CAMPAIGNDIR; do
+            CID="$(basename "$CAMPAIGNDIR")"
+            start_analysis
+        done < <(find_subdirs "$PROGRAMDIR")
+    done < <(find_subdirs "$1")
+}
+
+start_analysis() {
+    SHARED="$TMPDIR/$FUZZER/$TARGET${BUG:+/$BUG}/$PROGRAM/$CID"
+
+    # select whether to copy or untar
+    if [ -f "$CAMPAIGNDIR/${TARBALL_BASENAME}.tar" ]; then
+        echo_time "Extracting archive into $SHARED"
+        mkdir -p "$SHARED"
+        tar -C "$SHARED" -xf "$CAMPAIGNDIR/${TARBALL_BASENAME}.tar"
+    else
+        echo_time "Moving data folder into $SHARED"
+        cp -r "$CAMPAIGNDIR" "$SHARED"
+    fi
+
+    ANALYSISDIR_THIS="${ANALYSISDIR}/${ANALYSIS}/${FUZZER}/${TARGET}${BUG:+/$BUG}/${PROGRAM}/${CID}"
+    mkdir -p "$ANALYSISDIR_THIS"
+
+    printf '%q/tools/captain/run_analysis_single.sh %q %q %q %q %q %q %q %q &>%q\n' \
+        "$MAGMA" \
+        "$ANALYSIS" \
+        "$FUZZER" \
+        "$TARGET" \
+        "$BUG" \
+        "$PROGRAM" \
+        "$ARGS" \
+        "$SHARED" \
+        "$ANALYSISDIR_THIS" \
+        "${LOGDIR}/${ANALYSIS}_${FUZZER}_${TARGET}${BUG:+_$BUG}_${PROGRAM}_${CID}_container.log" \
+        >>"$PARALLEL_FILE"
+}
 
 find_subdirs "$ARDIR" | while read -r -d '' FUZZERDIR; do
     FUZZER="$(basename "$FUZZERDIR")"
+    DIRECTED="$(meta_var "$FUZZER" DIRECTED)"
     find_subdirs "$FUZZERDIR" | while read -r -d '' TARGETDIR; do
         TARGET="$(basename "$TARGETDIR")"
 
         # build the Docker image
-        IMG_NAME="magma/$ANALYSIS/$TARGET"
+        IMG_NAME="$(magma_analysis_image_name)"
         if [ -z "$SKIP_BUILDS" ] && ! grep -q "$IMG_NAME" "$BUILT_IMAGES"; then
             echo_time "Building $IMG_NAME"
-            if ! "$MAGMA"/tools/captain/build.sh "$ANALYSIS" &>"${LOGDIR}/${ANALYSIS}_${TARGET}_build.log"; then
+            LOGFILE="${LOGDIR}/${ANALYSIS}_${TARGET}_build.log"
+            if ! "$MAGMA"/tools/captain/build.sh "$ANALYSIS" &>"$LOGFILE"; then
                 echo_time "Failed to build $IMG_NAME. Check build log for info."
                 continue
             fi
@@ -89,39 +131,14 @@ find_subdirs "$ARDIR" | while read -r -d '' FUZZERDIR; do
             continue
         fi
 
-        find_subdirs "$TARGETDIR" | while read -r -d '' PROGRAMDIR; do
-            PROGRAM="$(basename "$PROGRAMDIR")"
-            ARGS="$(get_var_or_default "$FUZZER" "$TARGET" "$PROGRAM" 'ARGS')"
-            find_subdirs "$PROGRAMDIR" | while read -r -d '' CAMPAIGNDIR; do
-                CID="$(basename "$CAMPAIGNDIR")"
-                SHARED="$TMPDIR/$FUZZER/$TARGET/$PROGRAM/$CID"
-
-                # select whether to copy or untar
-                if [ -f "$CAMPAIGNDIR/${TARBALL_BASENAME}.tar" ]; then
-                    echo_time "Extracting archive into $SHARED"
-                    mkdir -p "$SHARED"
-                    tar -C "$SHARED" -xf "$CAMPAIGNDIR/${TARBALL_BASENAME}.tar"
-                else
-                    echo_time "Moving data folder into $SHARED"
-                    cp -r "$CAMPAIGNDIR" "$SHARED"
-                fi
-
-                ANALYSISDIR_THIS="${ANALYSISDIR}/${ANALYSIS}/${FUZZER}/${TARGET}/${PROGRAM}/${CID}"
-                mkdir -p "$ANALYSISDIR_THIS"
-
-                printf '%q/tools/captain/run_analysis_single.sh %q %q %q %q %q %q %q &>%q\n' \
-                    "$MAGMA" \
-                    "$ANALYSIS" \
-                    "$FUZZER" \
-                    "$TARGET" \
-                    "$PROGRAM" \
-                    "$ARGS" \
-                    "$SHARED" \
-                    "$ANALYSISDIR_THIS" \
-                    "${LOGDIR}/${ANALYSIS}_${FUZZER}_${TARGET}_${PROGRAM}_${CID}_container.log" \
-                    >>"$PARALLEL_FILE"
+        if [ -n "$DIRECTED" ]; then
+            find_subdirs "$TARGETDIR" | while read -r -d '' BUGDIR; do
+                BUG="$(basename "$BUGDIR")"
+                iterate_programs "$BUGDIR"
             done
-        done
+        else
+            iterate_programs "$TARGETDIR"
+        fi
     done
 done
 

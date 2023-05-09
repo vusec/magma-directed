@@ -6,23 +6,24 @@
 # - 1 or env ANALYSIS: analysis name (from fuzzers/)
 # - 2 or env FUZZER: fuzzer name (from fuzzers/)
 # - 3 or env TARGET: target name (from targets/)
-# - 4 or env PROGRAM: program name (name of binary artifact from $TARGET/build.sh)
-# - 5 or env ARGS: program launch arguments
-# - 6 or env SHARED: path to host-local volume where fuzzer findings are saved
-# - 7 or env ANALYSIS_OUT: path to move analysis output to
+# - 4 or env BUG: target name (from targets/$TARGET/patches/bugs)
+# - 5 or env PROGRAM: program name (name of binary artifact from $TARGET/build.sh)
+# - 6 or env ARGS: program launch arguments
+# - 7 or env SHARED: path to host-local volume where fuzzer findings are saved
+# - 8 or env ANALYSIS_OUT: path to move analysis output to
 ##
 
 ANALYSIS="${1:-$ANALYSIS}"
 FUZZER="${2:-$FUZZER}"
 TARGET="${3:-$TARGET}"
-PROGRAM="${4:-$PROGRAM}"
-ARGS="${5:-$ARGS}"
-SHARED="${6:-$SHARED}"
-ANALYSIS_OUT="${7:-$ANALYSIS_OUT}"
+BUG="${4:-$BUG}"
+PROGRAM="${5:-$PROGRAM}"
+ARGS="${6:-$ARGS}"
+SHARED="${7:-$SHARED}"
+ANALYSIS_OUT="${8:-$ANALYSIS_OUT}"
 
 MAGMA=${MAGMA:-"$(cd "$(dirname "${BASH_SOURCE[0]}")/../../" >/dev/null 2>&1 && pwd)"}
 export MAGMA
-# shellcheck source=tools/captain/common.sh
 source "$MAGMA/tools/captain/common.sh"
 
 has_errors=0
@@ -37,6 +38,10 @@ fi
 if [ -z "$TARGET" ] || [ ! -d "$MAGMA/targets/$TARGET" ]; then
     has_errors=1
     echo >&2 "\$TARGET is required to be a folder in $MAGMA/targets"
+fi
+if [ -n "$BUG" ] && [ ! -f "$(magma_patch_for_bug)" ]; then
+    has_errors=1
+    echo >&2 "\$BUG=$BUG is not a valid bug in $(magma_patch_for_bug)"
 fi
 if [ -z "$PROGRAM" ]; then
     has_errors=1
@@ -63,8 +68,6 @@ cleanup() {
 
 trap cleanup EXIT
 
-IMG_NAME="magma/$ANALYSIS/$TARGET"
-
 flag_mount="--mount=type=bind,src=$(realpath "$SHARED"),dst=/magma_shared,readonly"
 if docker --version 2>&1 | grep -q -i podman; then
     flag_mount="$flag_mount,U,Z"
@@ -77,7 +80,7 @@ container_id=$(
         --env=PROGRAM="$PROGRAM" --env=ARGS="$ARGS" \
         --env=REAL_FUZZER="$FUZZER" \
         --env=ANALYSIS_OUT=/magma_out/analysis_out \
-        "$IMG_NAME" -c "$ANALYSIS_ENTRYPOINT"
+        "$(magma_analysis_image_name)" -c "$ANALYSIS_ENTRYPOINT"
 )
 set +x
 container_id=$(cut -c-12 <<<"$container_id")
