@@ -245,6 +245,7 @@ for FUZZER in "${FUZZERS[@]}"; do
         # build the Docker image
 
         if [ -n "$DIRECTED" ]; then
+            BUGS_BUILT=()
             IFS=' ' read -r -a BUGS <<<"$(get_var_or_default "$FUZZER" "$TARGET" BUGS)"
             for BUG in "${BUGS[@]}"; do
                 export BUG
@@ -255,6 +256,7 @@ for FUZZER in "${FUZZERS[@]}"; do
                     echo_time "Failed to build $IMG_NAME. Check build log for info."
                     continue
                 fi
+                BUGS_BUILT+=("$BUG")
             done
             # unset so it does not get passed to a call to build.sh that does not need it
             unset BUG
@@ -278,7 +280,7 @@ for FUZZER in "${FUZZERS[@]}"; do
             ARGS="$(get_var_or_default "$FUZZER" "$TARGET" "$PROGRAM" ARGS)"
 
             if [ -n "$DIRECTED" ]; then
-                for BUG in "${BUGS[@]}"; do
+                for BUG in "${BUGS_BUILT[@]}"; do
                     export BUG
                     echo_time "Starting campaigns for bug $BUG: $PROGRAM $ARGS"
                     for ((i = 0; i < REPEAT; i++)); do
