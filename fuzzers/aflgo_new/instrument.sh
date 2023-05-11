@@ -25,6 +25,7 @@ export AFLGO_CLANG=clang-16
 "$MAGMA/build.sh"
 export CC=libaflgo_cc
 export CXX=libaflgo_cxx
+export LIB_FUZZING_ENGINE="$OUT/stub_rt.o"
 "$TARGET/build.sh"
 
 # NOTE: We pass $OUT directly to the target build.sh script, since the artifact

@@ -25,4 +25,7 @@ cmake -GNinja \
     "$FUZZER/repo"
 ninja
 sudo -E ninja install
+clang-16 -c "$FUZZER/stub_rt.c"
+cp stub_rt.o "$OUT/stub_rt.o"
+cd -
 rm -rf "$BUILD"
