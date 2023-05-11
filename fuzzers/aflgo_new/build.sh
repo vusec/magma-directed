@@ -12,6 +12,7 @@ if [ ! -d "$FUZZER/repo" ]; then
 fi
 
 export CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
+export LIBAFL_EDGES_MAP_SIZE=2621440
 
 BUILD="$FUZZER/build"
 rm -rf "$BUILD"
