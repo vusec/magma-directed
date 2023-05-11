@@ -21,19 +21,39 @@ tag=magma-init
 echo "[+] Tagging initial git state with $tag"
 git tag $tag
 
+search_dirs=()
+setup_dir="$TARGET/patches/setup"
+if [ -d "$setup_dir" ]; then
+    search_dirs+=("$setup_dir")
+fi
+bugs_dir="$TARGET/patches/bugs"
+if [ ! -d "$bugs_dir" ]; then
+    echo >&2 "[!] There is no $bugs_dir directory"
+    exit 1
+fi
+search_dirs+=("$bugs_dir")
+
 is_setup=1
+has_setup_patches=0
 setup_tag=magma-setup
 
 # TODO filter patches by target config.yaml
 while read -r patch; do
     kind=$(basename "$(dirname "$patch")")
+    if [ "$kind" = setup ]; then
+        has_setup_patches=1
+    fi
     if [ "$kind" = bugs ] && [ $is_setup -eq 1 ]; then
         # this is the first bug patch, setup is finished
         is_setup=0
         tag=$setup_tag
-        echo "[+] Setup done, tagging as $tag"
-        git add .
-        git commit -m $tag
+        if [ $has_setup_patches -eq 1 ]; then
+            echo "[+] Setup done, tagging as $tag"
+            git add .
+            git commit -m $tag
+        else
+            echo "[-] No setup patches, tagging as $tag"
+        fi
         git tag $tag
     fi
 
@@ -52,7 +72,7 @@ while read -r patch; do
         echo "[+] Storing $OUT/bug_$name.diff"
         git diff "$oldtag..$tag" >"$OUT/bug_$name.diff"
     fi
-done < <(find "$TARGET/patches/setup" "$TARGET/patches/bugs" -name "*.patch")
+done < <(find "${search_dirs[@]}" -name "*.patch")
 
 echo "[+] Storing total diff of patches into $OUT/bugs.diff"
 git diff $setup_tag..HEAD >"$OUT/bugs.diff"
