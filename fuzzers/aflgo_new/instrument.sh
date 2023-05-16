@@ -18,7 +18,12 @@ fi
 
 export AFLGO_TARGETS="$OUT/aflgo_targets.txt"
 "$MAGMA"/showlinenum.awk path=1 show_header=0 <"$MAGMA_BUG_FILE" \
-    | gawk -F':' '$1 ~ /\.(c|cc|cpp|h|hpp)$/ && $3 ~ /^\+/ {print $1 ":" $2}' >"$AFLGO_TARGETS"
+    | gawk -F':' -v repo_path="$TARGET/repo/" \
+        'BEGIN { cmd_base = "readlink -f " repo_path }
+        $1 ~ /\.(c|cc|cpp|h|hpp)$/ && $3 ~ /^\+/ {
+            cmd = cmd_base $1; cmd | getline path;
+            print path ":" $2
+        }' >"$AFLGO_TARGETS"
 
 export AFLGO_CLANG=clang-16
 
