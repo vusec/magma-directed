@@ -13,13 +13,18 @@ if [ ! -d "$TARGET/repo" ]; then
     exit 1
 fi
 
-# build lua library
 cd "$TARGET/repo"
+
+# build lua library
 make -j$(nproc) clean
 make -j$(nproc) liblua.a
-
 cp liblua.a "$OUT/"
 
-# build driver
-make -j$(nproc) lua
+# build main lua binary
+make -j$(nproc) MYLDFLAGS="$CFLAGS" lua
 cp lua "$OUT/"
+
+# build driver
+cp "$TARGET/src/fuzz_lua.c" .
+$CC $CFLAGS -c fuzz_lua.c -o fuzz_lua.o
+$CXX $CXXFLAGS $LIB_FUZZING_ENGINE fuzz_lua.o -o "$OUT/fuzz_lua" "$OUT/liblua.a" $LDFLAGS $LIBS
