@@ -66,7 +66,7 @@ get_next_cid() {
         echo 0
         dir="$1/0"
     else
-        IFS=' ' read -r -a cids <<<"$(sort -n < <(basename -a "${campaigns[@]}"))"
+        mapfile -t cids < <(sort -n < <(basename -a "${campaigns[@]}"))
         for ((i = 0; ; i++)); do
             if [ -z "${cids[i]}" ] || [ "${cids[i]}" -ne "$i" ]; then
                 echo "$i"
