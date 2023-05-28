@@ -11,13 +11,20 @@
 
 mkdir -p "$SHARED/findings"
 
-export ASAN_OPTIONS="\
-abort_on_error=1:detect_leaks=0:\
-malloc_context_size=0:symbolize=0:\
-allocator_may_return_null=1:\
-detect_odr_violation=0:handle_segv=0:\
-handle_sigbus=0:handle_abort=0:\
-handle_sigfpe=0:handle_sigill=0"
+{ set +x; } 2>&-
+source "$MAGMA/sanitizers.sh"
+common_sanitizer_options[handle_segv]=0
+common_sanitizer_options[handle_sigbus]=0
+common_sanitizer_options[handle_abort]=0
+common_sanitizer_options[handle_sigfpe]=0
+common_sanitizer_options[handle_sigill]=0
+address_sanitizer_options[detect_leaks]=0
+address_sanitizer_options[malloc_context_size]=0
+set_sanitizer_options 1
+echo "\
++ ASAN_OPTIONS=$ASAN_OPTIONS
++ UBSAN_OPTIONS=$UBSAN_OPTIONS" >&2
+set -x
 
 "$OUT/$PROGRAM" \
     -i "$TARGET/corpus/$PROGRAM" \
