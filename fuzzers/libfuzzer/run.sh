@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -ex
 
 ##
 # Pre-requirements:
@@ -11,9 +11,11 @@
 # - env FUZZARGS: extra arguments to pass to the fuzzer
 ##
 
-mkdir -p "$SHARED/findings"
+mkdir -p "$SHARED"/findings/{crashes,queue}
 
-"$OUT/$PROGRAM" -rss_limit_mb=100 \
-	-fork=1 -ignore_timeouts=1 -ignore_crashes=1 -ignore_ooms=1 \
-	-artifact_prefix="$SHARED/findings/" $FUZZARGS \
-    "$TARGET/corpus/$PROGRAM" $ARGS
+"$OUT/$PROGRAM" \
+    -rss_limit_mb=100 \
+    -print_final_stats=1 -close_fd_mask=3 \
+    -fork=1 -ignore_timeouts=1 -ignore_crashes=1 -ignore_ooms=1 \
+    -artifact_prefix="$SHARED/findings/crashes/" $FUZZARGS \
+    "$SHARED/findings/queue/" "$TARGET/corpus/$PROGRAM"

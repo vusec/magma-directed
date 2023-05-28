@@ -1,5 +1,4 @@
-#!/bin/bash
-set -e
+#!/bin/bash -ex
 
 ##
 # Pre-requirements:
@@ -10,14 +9,15 @@ set -e
 # - env CFLAGS and CXXFLAGS must be set to link against Magma instrumentation
 ##
 
-export CC="clang"
-export CXX="clang++"
+export CC="clang-15"
+export CXX="clang++-15"
 
 export CFLAGS="$CFLAGS -fsanitize=fuzzer-no-link"
 export CXXFLAGS="$CXXFLAGS -fsanitize=fuzzer-no-link"
 export LDFLAGS="$LDFLAGS -fsanitize=fuzzer-no-link"
 
-export LIBS="$LIBS -l:driver.o $OUT/libFuzzer.a -lstdc++"
+export LIB_FUZZING_ENGINE="$OUT/libFuzzer.a"
+export LIBS="$LIBS -l:driver.o $LIB_FUZZING_ENGINE -lstdc++"
 
 "$MAGMA/build.sh"
 "$TARGET/build.sh"
