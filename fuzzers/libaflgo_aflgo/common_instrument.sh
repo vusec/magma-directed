@@ -1,8 +1,8 @@
-#!/bin/bash
-set -e
+# shellcheck shell=bash
 
 ##
 # Pre-requirements:
+# - env AFLGO_FUZZER: name of the libaflgo fuzzer
 # - env FUZZER: path to fuzzer work dir
 # - env TARGET: path to target work dir
 # - env MAGMA: path to Magma support files
@@ -10,6 +10,11 @@ set -e
 # - env CFLAGS and CXXFLAGS must be set to link against Magma instrumentation
 # - env MAGMA_BUG_FILE: bug to target
 ##
+
+if [ -z "$AFLGO_FUZZER" ]; then
+    printf >&2 "AFLGO_FUZZER is not set\n"
+    exit 1
+fi
 
 if [ ! -f "$MAGMA_BUG_FILE" ]; then
     printf >&2 "MAGMA_BUG_FILE=%q is not a file\n" "$MAGMA_BUG_FILE"
@@ -33,14 +38,13 @@ fi
 "$MAGMA/build.sh"
 
 export AFLGO_CLANG=clang-15
-export CC=libaflgo_aflgo_cc
-export CXX=libaflgo_aflgo_cxx
+export CC="libaflgo_${AFLGO_FUZZER}_cc"
+export CXX="libaflgo_${AFLGO_FUZZER}_cxx"
+
 SANITIZERS="-fsanitize=address"
 export CFLAGS="$CFLAGS $SANITIZERS"
 export CXXFLAGS="$CXXFLAGS $SANITIZERS"
-export LIB_FUZZING_ENGINE="$OUT/stub_rt.a"
-"$TARGET/build.sh"
 
-# NOTE: We pass $OUT directly to the target build.sh script, since the artifact
-#       itself is the fuzz target. In the case of Angora, we might need to
-#       replace $OUT by $OUT/fast and $OUT/track, for instance.
+export LIB_FUZZING_ENGINE="$OUT/stub_rt.a"
+
+"$TARGET/build.sh"
