@@ -9,7 +9,7 @@
 # - env PROGRAM: name of program to run (should be found in $OUT)
 ##
 
-export TIMELIMIT=0.1s
+export TIMELIMIT=0.3s
 
 source "$MAGMA/sanitizers.sh"
 common_sanitizer_options[handle_segv]=0
