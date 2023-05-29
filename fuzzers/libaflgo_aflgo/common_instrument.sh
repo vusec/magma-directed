@@ -37,6 +37,7 @@ fi
 
 "$MAGMA/build.sh"
 
+export SVF_DIR="$FUZZER/svf"
 export AFLGO_CLANG=clang-15
 export CC="libaflgo_${AFLGO_FUZZER}_cc"
 export CXX="libaflgo_${AFLGO_FUZZER}_cxx"
