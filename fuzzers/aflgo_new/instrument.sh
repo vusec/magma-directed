@@ -39,10 +39,6 @@ SANITIZERS="-fsanitize=address"
 export CFLAGS="$CFLAGS $SANITIZERS"
 export CXXFLAGS="$CXXFLAGS $SANITIZERS"
 export LIB_FUZZING_ENGINE="$OUT/stub_rt.a"
-export PAR_JOBS
-if [ "$(basename "$TARGET")" = php ]; then
-    PAR_JOBS=2
-fi
 "$TARGET/build.sh"
 
 # NOTE: We pass $OUT directly to the target build.sh script, since the artifact
