@@ -14,7 +14,7 @@ add-apt-repository -y ppa:ubuntu-toolchain-r/test
 
 curl -O https://apt.llvm.org/llvm.sh
 chmod +x llvm.sh
-./llvm.sh 16 all
+./llvm.sh 15
 rm -f llvm.sh
 
 bash -c "$(curl https://apt.kitware.com/kitware-archive.sh)"

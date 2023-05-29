@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/bin/bash -e
 
 ##
 # Pre-requirements:
@@ -6,13 +6,26 @@
 # - env OUT: path to directory where artifacts are stored
 # - env SHARED: path to directory shared with host (to store results)
 # - env PROGRAM: name of program to run (should be found in $OUT)
-# - env ARGS: extra arguments to pass to the program
 # - env FUZZARGS: extra arguments to pass to the fuzzer
 ##
+
+source "$MAGMA/sanitizers.sh"
+common_sanitizer_options[handle_segv]=0
+common_sanitizer_options[handle_sigbus]=0
+common_sanitizer_options[handle_abort]=0
+common_sanitizer_options[handle_sigfpe]=0
+common_sanitizer_options[handle_sigill]=0
+address_sanitizer_options[detect_leaks]=0
+address_sanitizer_options[malloc_context_size]=0
+set_sanitizer_options 1
+echo "\
++ ASAN_OPTIONS=$ASAN_OPTIONS
++ UBSAN_OPTIONS=$UBSAN_OPTIONS" >&2
+set -x
 
 mkdir -p "$SHARED/findings"
 
 "$OUT/$PROGRAM" \
     --input "$TARGET/corpus/$PROGRAM" \
     --output "$SHARED/findings" \
-    $FUZZARGS $ARGS
+    $FUZZARGS

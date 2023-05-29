@@ -20,12 +20,12 @@ mkdir -p "$BUILD"
 cd "$BUILD"
 cmake -GNinja \
     -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_C_COMPILER=clang-16 \
-    -DCMAKE_CXX_COMPILER=clang++-16 \
+    -DCMAKE_C_COMPILER=clang-15 \
+    -DCMAKE_CXX_COMPILER=clang++-15 \
     "$FUZZER/repo"
-ninja
-sudo -E ninja install
-clang-16 -c "$FUZZER/stub_rt.c"
-cp stub_rt.o "$OUT/stub_rt.o"
+cmake --build .
+sudo -E cmake --install .
+clang-15 -c "$FUZZER/stub_rt.c"
+ar r "$OUT/stub_rt.a" stub_rt.o
 cd -
 rm -rf "$BUILD"

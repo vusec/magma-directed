@@ -25,12 +25,24 @@ export AFLGO_TARGETS="$OUT/aflgo_targets.txt"
             print path ":" $2
         }' >"$AFLGO_TARGETS"
 
-export AFLGO_CLANG=clang-16
+if [ "$(wc -l <"$AFLGO_TARGETS")" -lt 1 ]; then
+    printf >&2 "No targets found in %q\n" "$MAGMA_BUG_FILE"
+    exit 1
+fi
 
 "$MAGMA/build.sh"
-export CC=libaflgo_cc
-export CXX=libaflgo_cxx
-export LIB_FUZZING_ENGINE="$OUT/stub_rt.o"
+
+export AFLGO_CLANG=clang-15
+export CC=libaflgo_aflgo_cc
+export CXX=libaflgo_aflgo_cxx
+SANITIZERS="-fsanitize=address"
+export CFLAGS="$CFLAGS $SANITIZERS"
+export CXXFLAGS="$CXXFLAGS $SANITIZERS"
+export LIB_FUZZING_ENGINE="$OUT/stub_rt.a"
+export PAR_JOBS
+if [ "$(basename "$TARGET")" = php ]; then
+    PAR_JOBS=2
+fi
 "$TARGET/build.sh"
 
 # NOTE: We pass $OUT directly to the target build.sh script, since the artifact
