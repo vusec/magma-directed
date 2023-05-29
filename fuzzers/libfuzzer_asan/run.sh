@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/bin/bash -e
 
 ##
 # Pre-requirements:
@@ -11,9 +11,6 @@
 # - env FUZZARGS: extra arguments to pass to the fuzzer
 ##
 
-mkdir -p "$SHARED"/findings/{crashes,queue}
-
-{ set +x; } 2>&-
 source "$MAGMA/sanitizers.sh"
 address_sanitizer_options[detect_leaks]=0
 set_sanitizer_options 1
@@ -21,6 +18,8 @@ echo "\
 + ASAN_OPTIONS=$ASAN_OPTIONS
 + UBSAN_OPTIONS=$UBSAN_OPTIONS" >&2
 set -x
+
+mkdir -p "$SHARED"/findings/{crashes,queue}
 
 "$OUT/$PROGRAM" \
     -detect_leaks=0 \

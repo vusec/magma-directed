@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/bin/bash -e
 
 ##
 # Pre-requirements:
@@ -9,9 +9,6 @@
 # - env FUZZARGS: extra arguments to pass to the fuzzer
 ##
 
-mkdir -p "$SHARED/findings"
-
-{ set +x; } 2>&-
 source "$MAGMA/sanitizers.sh"
 common_sanitizer_options[handle_segv]=0
 common_sanitizer_options[handle_sigbus]=0
@@ -25,6 +22,8 @@ echo "\
 + ASAN_OPTIONS=$ASAN_OPTIONS
 + UBSAN_OPTIONS=$UBSAN_OPTIONS" >&2
 set -x
+
+mkdir -p "$SHARED/findings"
 
 "$OUT/$PROGRAM" \
     -i "$TARGET/corpus/$PROGRAM" \
