@@ -54,7 +54,7 @@ RUN mkdir -p ${FUZZER} && chown magma:magma ${FUZZER}
 COPY --chown=magma:magma ${magma_root}/${fuzzer_path}/preinstall.sh ${FUZZER}/
 RUN ${FUZZER}/preinstall.sh
 USER magma:magma
-COPY --chown=magma:magma ${magma_root}/${fuzzer_path} ${FUZZER}/
+COPY --chown=magma:magma ${magma_root}/${fuzzer_path}/* ${FUZZER}/
 RUN --mount=type=ssh,uid=${USER_ID},gid=${GROUP_ID} ${FUZZER}/fetch.sh
 RUN ${FUZZER}/build.sh
 
