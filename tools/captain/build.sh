@@ -60,6 +60,8 @@ fi
 
 IMG_NAME=$(magma_image_name)
 
+export DOCKER_BUILDKIT=1
+
 set -x
 docker build \
     -t "$IMG_NAME" \
