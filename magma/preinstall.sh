@@ -2,4 +2,4 @@
 set -e
 
 apt-get update && \
-    apt-get install -y make build-essential daemontools git vim gawk
+    apt-get install -y make build-essential daemontools git gawk vim gdb
