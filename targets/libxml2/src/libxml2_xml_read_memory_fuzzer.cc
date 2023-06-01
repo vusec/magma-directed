@@ -28,6 +28,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
   // Disable XML_PARSE_HUGE to avoid stack overflow.
   random_option_value &= ~XML_PARSE_HUGE;
+  random_option_value &= ~XML_PARSE_DTDLOAD;
   const int options[] = {0, random_option_value};
 
   for (const auto option_value : options) {
