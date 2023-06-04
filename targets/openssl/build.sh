@@ -13,6 +13,12 @@ if [ ! -d "$TARGET/repo" ]; then
     exit 1
 fi
 
+if [ -f "$FUZZER/configrc" ]; then
+    source "$FUZZER/configrc"
+fi
+
+PAR_JOBS=${PAR_JOBS:-$(nproc)}
+
 # build the libpng library
 cd "$TARGET/repo"
 
@@ -30,11 +36,20 @@ export LDLIBS="$LIBS"
     enable-ssl3-method enable-nextprotoneg enable-weak-ssl-ciphers \
     $CFLAGS -fno-sanitize=alignment $CONFIGURE_FLAGS
 
-make -j$(nproc) clean
-make -j$(nproc) LDCMD="$CXX $CXXFLAGS"
+if [ "${#openssl_BUILD_PROGRAMS[@]}" -eq 0 ]; then
+    openssl_BUILD_PROGRAMS=(asn1 asn1parse bignum client server x509)
+fi
 
-fuzzers=$(find fuzz -executable -type f '!' -name \*.py '!' -name \*-test '!' -name \*.pl)
-for f in $fuzzers; do
-    fuzzer=$(basename $f)
-    cp $f "$OUT/"
+programs=()
+for p in "${openssl_BUILD_PROGRAMS[@]}"; do
+    programs+=("fuzz/$p")
+done
+
+make -j"$PAR_JOBS" clean
+make -j"$PAR_JOBS" LDCMD="$CXX $CXXFLAGS" build_libs
+make -j"$PAR_JOBS" LDCMD="$CXX $CXXFLAGS" "${programs[@]}"
+
+# fuzzers=$(find fuzz -executable -type f '!' -name \*.py '!' -name \*-test '!' -name \*.pl)
+for f in "${programs[@]}"; do
+    cp "$f" "$OUT/"
 done
