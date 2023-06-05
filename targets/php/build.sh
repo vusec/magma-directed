@@ -13,6 +13,12 @@ if [ ! -d "$TARGET/repo" ]; then
     exit 1
 fi
 
+if [ -f "$FUZZER/configrc" ]; then
+    source "$FUZZER/configrc"
+fi
+
+PAR_JOBS=${PAR_JOBS:-$(nproc)}
+
 cd "$TARGET/repo"
 export ONIG_CFLAGS="-I$PWD/oniguruma/src"
 export ONIG_LIBS="-L$PWD/oniguruma/src/.libs -l:libonig.a"
@@ -39,24 +45,33 @@ LIB_FUZZING_ENGINE="-Wall" ./configure \
     --disable-cgi \
     --with-pic
 
-make -j$(nproc) clean
+make -j"$PAR_JOBS" clean
 
 # build oniguruma and link statically
 pushd oniguruma
 autoreconf -vfi
 ./configure --disable-shared
-make -j$(nproc)
+make -j"$PAR_JOBS"
 popd
 
-make -j$(nproc)
+if [ "${#php_BUILD_PROGRAMS[@]}" -eq 0 ]; then
+    php_BUILD_PROGRAMS=(json exif unserialize parser)
+fi
+
+programs=()
+for p in "${php_BUILD_PROGRAMS[@]}"; do
+    programs+=("sapi/fuzzer/php-fuzz-$p")
+done
+
+make -j"$PAR_JOBS" cli "${programs[@]}"
 
 # Generate seed corpora
 sapi/cli/php sapi/fuzzer/generate_unserialize_dict.php
 sapi/cli/php sapi/fuzzer/generate_parser_corpus.php
 
-FUZZERS="php-fuzz-json php-fuzz-exif php-fuzz-mbstring php-fuzz-unserialize php-fuzz-parser"
-for fuzzerName in $FUZZERS; do
-	cp sapi/fuzzer/$fuzzerName "$OUT/${fuzzerName/php-fuzz-/}"
+for fuzzer_path in "${programs[@]}"; do
+    f=$(basename "$fuzzer_path")
+    cp "$fuzzer_path" "$OUT/${f/php-fuzz-/}"
 done
 
 for fuzzerName in `ls sapi/fuzzer/corpus`; do
