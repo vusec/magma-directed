@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// Taken from https://github.com/chromium/chromium/blob/a50641c8b8bb7c5727a57df63d69b30825adc8d3/testing/libfuzzer/fuzzers/libxml_xml_read_memory_fuzzer.cc
+
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -27,8 +29,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   int random_option_value = data_hash % max_option_value;
 
   // Disable XML_PARSE_HUGE to avoid stack overflow.
-  random_option_value &= ~XML_PARSE_HUGE;
-  random_option_value &= ~XML_PARSE_DTDLOAD;
+  // Disable XML_PARSE_NOENT, XML_PARSE_DTD[LOAD|ATTR|VALID] to avoid timeout
+  // loading external entity from stdin. http://crbug.com/755142.
+  random_option_value &= ~(XML_PARSE_HUGE | XML_PARSE_NOENT |
+                           XML_PARSE_DTDLOAD | XML_PARSE_DTDATTR |
+                           XML_PARSE_DTDVALID);
   const int options[] = {0, random_option_value};
 
   for (const auto option_value : options) {
