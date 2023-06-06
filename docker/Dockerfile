@@ -92,6 +92,6 @@ ENV LDFLAGS="-L$OUT -g"
 ENV MAGMA_BUG=$bug
 ENV MAGMA_BUG_FILE=${bug:+"$OUT/bug_$bug.diff"}
 
-RUN /usr/bin/time -v "${FUZZER}/instrument.sh"
+RUN "${MAGMA}/gather_resusage.sh" "${FUZZER}/instrument.sh"
 
 ENTRYPOINT "${MAGMA}/run.sh"
