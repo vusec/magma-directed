@@ -41,9 +41,14 @@ ARG magma_path=magma
 ENV MAGMA 	${MAGMA_R}/${magma_path}
 USER root:root
 RUN mkdir -p ${MAGMA} && chown magma:magma ${MAGMA}
-COPY --chown=magma:magma ${magma_root}/${magma_path} ${MAGMA}/
+COPY --chown=magma:magma ${magma_root}/${magma_path}/preinstall.sh ${MAGMA}/
 RUN ${MAGMA}/preinstall.sh
 USER magma:magma
+COPY --chown=magma:magma \
+    ${magma_root}/${magma_path}/prebuild.sh \
+    ${magma_root}/${magma_path}/build.sh \
+    ${MAGMA}/
+COPY --chown=magma:magma ${magma_root}/${magma_path}/src ${MAGMA}/src
 RUN ${MAGMA}/prebuild.sh
 
 ARG fuzzer_name
@@ -70,6 +75,7 @@ COPY --chown=magma:magma ${magma_root}/${target_path} ${TARGET}/
 RUN ${TARGET}/preinstall.sh
 USER magma:magma
 RUN ${TARGET}/fetch.sh
+COPY --chown=magma:magma ${magma_root}/${magma_path}/apply_patches.sh ${MAGMA}/
 RUN ${MAGMA}/apply_patches.sh
 
 ## Configuration parameters
@@ -91,6 +97,15 @@ ENV LIBS="-l:magma.o -lrt"
 ENV LDFLAGS="-L$OUT -g"
 ENV MAGMA_BUG=$bug
 ENV MAGMA_BUG_FILE=${bug:+"$OUT/bug_$bug.diff"}
+
+COPY --chown=magma:magma \
+    ${magma_root}/${magma_path}/all_findings.sh \
+    ${magma_root}/${magma_path}/gather_resusage.sh \
+    ${magma_root}/${magma_path}/run.sh \
+    ${magma_root}/${magma_path}/runonce.sh \
+    ${magma_root}/${magma_path}/sanitizers.sh \
+    ${magma_root}/${magma_path}/showlinenum.awk \
+    ${MAGMA}/
 
 RUN "${MAGMA}/gather_resusage.sh" "${FUZZER}/instrument.sh"
 
