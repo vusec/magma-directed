@@ -5,6 +5,7 @@
 // Taken from https://github.com/chromium/chromium/blob/a50641c8b8bb7c5727a57df63d69b30825adc8d3/testing/libfuzzer/fuzzers/libxml_xml_read_memory_fuzzer.cc
 
 #include <cassert>
+#include <csignal>
 #include <cstddef>
 #include <cstdint>
 
@@ -15,8 +16,17 @@
 #include "libxml/parser.h"
 #include "libxml/xmlsave.h"
 
+void signal_handler(int signum) {
+  abort();
+}
+
 void ignore (void* ctx, const char* msg, ...) {
   // Error handler to avoid spam of error messages from libxml parser.
+}
+
+extern "C" void LLVMFuzzerInitialize(int* argc, char*** argv) {
+  // setup signal handler on SIGTTIN signal
+  signal(SIGTTIN, signal_handler);
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
@@ -29,11 +39,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   int random_option_value = data_hash % max_option_value;
 
   // Disable XML_PARSE_HUGE to avoid stack overflow.
-  // Disable XML_PARSE_NOENT, XML_PARSE_DTD[LOAD|ATTR|VALID] to avoid timeout
-  // loading external entity from stdin. http://crbug.com/755142.
-  random_option_value &= ~(XML_PARSE_HUGE | XML_PARSE_NOENT |
-                           XML_PARSE_DTDLOAD | XML_PARSE_DTDATTR |
-                           XML_PARSE_DTDVALID);
+  random_option_value &= ~XML_PARSE_HUGE;
   const int options[] = {0, random_option_value};
 
   for (const auto option_value : options) {
