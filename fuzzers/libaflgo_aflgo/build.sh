@@ -22,7 +22,7 @@ mkdir -p "$BUILD"
 cd "$BUILD"
 
 cmake -GNinja \
-    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_BUILD_TYPE=RelWithDebInfo \
     -DCMAKE_C_COMPILER=clang-15 \
     -DCMAKE_CXX_COMPILER=clang++-15 \
     "$FUZZER/repo"
