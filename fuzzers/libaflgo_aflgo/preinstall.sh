@@ -17,8 +17,9 @@ chmod +x llvm.sh
 ./llvm.sh 15
 rm -f llvm.sh
 
-bash -c "$(curl https://apt.kitware.com/kitware-archive.sh)"
-apt-get install -y cmake
+curl -Lo cmake.tar.gz https://github.com/Kitware/CMake/releases/download/v3.26.4/cmake-3.26.4-linux-x86_64.tar.gz
+tar xf cmake.tar.gz -C /usr/local --strip-components=1
+rm cmake.tar.gz
 
 apt-get clean -y
 
