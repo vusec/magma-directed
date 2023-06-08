@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 # Run given executable and print time and memory usage
 
 if [ $# -lt 1 ]; then
@@ -18,4 +18,6 @@ while [ -d /proc/$pid ]; do
     sleep 5
 done
 wait $pid
-printf '\n\nMax memory usage: %d\n' "$max_mem"
+exit_code=$?
+printf '\n\nMax memory usage: %d\n' "$max_mem" >&2
+exit $exit_code
