@@ -63,7 +63,10 @@ for p in "${php_BUILD_PROGRAMS[@]}"; do
     programs+=("sapi/fuzzer/php-fuzz-$p")
 done
 
-make -j"$PAR_JOBS" cli "${programs[@]}"
+make -j"$PAR_JOBS" cli
+for p in "${programs[@]}"; do
+    make -j"$PAR_JOBS" "$p"
+done
 
 # Generate seed corpora
 sapi/cli/php sapi/fuzzer/generate_unserialize_dict.php
