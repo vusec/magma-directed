@@ -248,19 +248,21 @@ for FUZZER in "${FUZZERS[@]}"; do
             BUGS_BUILT=()
             IFS=' ' read -r -a BUGS <<<"$(get_var_or_default "$FUZZER" "$TARGET" BUGS)"
             for BUG in "${BUGS[@]}"; do
-                export BUG
-                IMG_NAME=$(magma_image_name)
-                echo_time "Building $IMG_NAME"
-                LOGFILE="${LOGDIR}/${FUZZER}_${TARGET}_${BUG}_build.log"
-                if ! "$MAGMA"/tools/captain/build.sh &>"$LOGFILE"; then
-                    echo_time "Failed to build $IMG_NAME. Check build log for info."
-                    continue
+                if [ -z "$SKIP_BUILDS" ]; then
+                    export BUG
+                    IMG_NAME=$(magma_image_name)
+                    echo_time "Building $IMG_NAME"
+                    LOGFILE="${LOGDIR}/${FUZZER}_${TARGET}_${BUG}_build.log"
+                    if ! "$MAGMA"/tools/captain/build.sh &>"$LOGFILE"; then
+                        echo_time "Failed to build $IMG_NAME. Check build log for info."
+                        continue
+                    fi
                 fi
                 BUGS_BUILT+=("$BUG")
             done
             # unset so it does not get passed to a call to build.sh that does not need it
             unset BUG
-        else
+        elif [ -z "$SKIP_BUILDS" ]; then
             IMG_NAME=$(magma_image_name)
             echo_time "Building $IMG_NAME"
             LOGFILE="${LOGDIR}/${FUZZER}_${TARGET}_build.log"
