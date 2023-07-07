@@ -71,7 +71,7 @@ echo "Campaign launched at $(date '+%F %R')"
 
 timeout $TIMEOUT "$FUZZER/run.sh" | \
     multilog n2 s$LOGSIZE "$SHARED/log"
-code=$?
+code=${PIPESTATUS[0]}
 
 if [ -f "$SHARED/log/current" ]; then
     cat "$SHARED/log/current"
