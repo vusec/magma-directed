@@ -80,3 +80,4 @@ fi
 echo "Campaign terminated at $(date '+%F %R') (exit code $code)"
 
 kill $(jobs -p)
+exit "$code"
