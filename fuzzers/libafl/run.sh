@@ -9,6 +9,8 @@
 # - env FUZZARGS: extra arguments to pass to the fuzzer
 ##
 
+trap '' SIGTTIN SIGTTOU
+
 source "$MAGMA/sanitizers.sh"
 common_sanitizer_options[handle_segv]=0
 common_sanitizer_options[handle_sigbus]=0

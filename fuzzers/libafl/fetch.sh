@@ -6,5 +6,5 @@ set -ex
 # - env FUZZER: path to fuzzer work dir
 ##
 
-git clone --depth 1 --branch 0.10.1 \
-    https://github.com/AFLplusplus/LibAFL.git "$FUZZER/repo"
+mkdir -m 0700 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
+git clone --depth 1 git@github.com:vusec/LibAFL-directed.git "$FUZZER/repo"
