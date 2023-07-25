@@ -75,6 +75,10 @@ COPY --chown=magma:magma ${magma_root}/${target_path} ${TARGET}/
 RUN ${TARGET}/preinstall.sh
 USER magma:magma
 RUN ${TARGET}/fetch.sh
+
+ARG bug
+ENV MAGMA_BUG=$bug
+ENV MAGMA_BUG_FILE=${bug:+"$OUT/bug_$bug.diff"}
 COPY --chown=magma:magma ${magma_root}/${magma_path}/apply_patches.sh ${MAGMA}/
 RUN ${MAGMA}/apply_patches.sh
 
@@ -83,7 +87,6 @@ ARG isan
 ARG harden
 ARG canaries
 ARG fixes
-ARG bug
 
 ARG ISAN_FLAG=${isan:+-DMAGMA_FATAL_CANARIES}
 ARG HARDEN_FLAG=${harden:+-DMAGMA_HARDEN_CANARIES}
