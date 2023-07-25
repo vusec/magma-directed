@@ -3,25 +3,25 @@
 
 #include "canary.h"
 #include "common.h"
-#include <stdio.h>
 #include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/mman.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
-#include <sys/wait.h>
 #include <linux/limits.h>
+#include <sys/wait.h>
 
 /**
  * Argument parsing infrastructure
  */
 struct arg_definition {
     char *name; // string identifier in the list of program arguments
-    bool flag; // if true, the argument does not expect a subsequent parameter
+    bool flag;  // if true, the argument does not expect a subsequent parameter
     char *dflt; // the default parameter value (if not present in the arg list)
     char *help;
 };
@@ -41,15 +41,16 @@ enum ARG_NUMS {
 };
 
 const struct arg_definition ARG_LIST[] = {
-    {"--dump", false, "raw", "The format to use when dumping canary structs:\n"
-                             "- raw: dumps the raw bytes\n"
-                             "- row: writes a CSV-style header and data row\n"
-                             "- human: writes a human-readable output"},
-    {"--fetch", false, "file", "The source from which to fetch canary data:\n"
-                               "- file: reads data from FILE\n"
-                               "- watch: runs COMMAND and collects data"},
-    {"--help", true, NULL, "Prints this help message"}
-};
+    {"--dump", false, "raw",
+     "The format to use when dumping canary structs:\n"
+     "- raw: dumps the raw bytes\n"
+     "- row: writes a CSV-style header and data row\n"
+     "- human: writes a human-readable output"},
+    {"--fetch", false, "file",
+     "The source from which to fetch canary data:\n"
+     "- file: reads data from FILE\n"
+     "- watch: runs COMMAND and collects data"},
+    {"--help", true, NULL, "Prints this help message"}};
 
 const char USAGE[] = "monitor [--dump {raw|row|human}] [--fetch {file|watch}] FILE|COMMAND";
 
@@ -159,8 +160,7 @@ void dump_row(const data_t *data)
 
 void *dump_one_human(pcanary_t canary, void *arg)
 {
-    printf("%s reached %llu triggered %llu\n", \
-            canary->name, canary->reached, canary->triggered);
+    printf("%s reached %llu triggered %llu\n", canary->name, canary->reached, canary->triggered);
     return NULL;
 }
 
@@ -270,8 +270,7 @@ int main(int argc, char **argv)
     }
 
     data_t data;
-    if (fetch_itm == NULL || \
-            strcmp(fetch_itm->value, fetch_itm->def->dflt) == 0) {
+    if (fetch_itm == NULL || strcmp(fetch_itm->value, fetch_itm->def->dflt) == 0) {
         const char *fname = NAME;
         if (argc > 0) {
             fname = argv[0];
