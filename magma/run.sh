@@ -11,12 +11,13 @@
 # - env FUZZARGS: extra arguments to pass to the fuzzer
 # - env POLL: time (in seconds) to sleep between polls
 # - env TIMEOUT: time to run the campaign
+# + env STOP_ON_BUG: if set, stop the campaign when the target/all bugs are triggered
 # - env MAGMA: path to Magma support files
 # + env LOGSIZE: size (in bytes) of log file to generate (default: 1 MiB)
 ##
 
 # set default max log size to 1 MiB
-LOGSIZE=${LOGSIZE:-$[1 << 20]}
+LOGSIZE=${LOGSIZE:-$((1 << 20))}
 
 export MONITOR="$SHARED/monitor"
 mkdir -p "$MONITOR"
@@ -44,7 +45,6 @@ if [ ${#seeds[@]} -eq 0 ]; then
     exit 1
 fi
 
-
 # launch the fuzzer in parallel with the monitor
 rm -f "$MONITOR/tmp"*
 polls=("$MONITOR"/*)
@@ -53,25 +53,50 @@ if [ ${#polls[@]} -eq 0 ]; then
 else
     timestamps=($(sort -n < <(basename -a "${polls[@]}")))
     last=${timestamps[-1]}
-    counter=$(( last + POLL ))
+    counter=$((last + POLL))
 fi
 
+monitor_flags=(--dump row)
+if [ -n "$STOP_ON_BUG" ]; then
+    if [ -z "$MAGMA_BUG" ]; then
+        echo "warning: STOP_ON_BUG is not supported for undirected campaigns" >&2
+    else
+        monitor_stop_on_bug_out="$MONITOR/stop_on_bug.out"
+        monitor_flags+=(--select-bug "$MAGMA_BUG" --select-bug-out "$monitor_stop_on_bug_out")
+    fi
+fi
+
+fuzzer_pid_file="$SHARED/fuzzer.pid"
+
 while true; do
-    "$OUT/monitor" --dump row > "$MONITOR/tmp"
-    if [ $? -eq 0 ]; then
+    if "$OUT/monitor" "${monitor_flags[@]}" >"$MONITOR/tmp"; then
         mv "$MONITOR/tmp" "$MONITOR/$counter"
+        if [ -n "$monitor_stop_on_bug_out" ] \
+            && [ -f "$monitor_stop_on_bug_out" ] \
+            && [ "$(cat "$monitor_stop_on_bug_out")" -gt 0 ]; then
+            echo "Bug $MAGMA_BUG triggered at $(date '+%F %R') ($counter)!"
+            kill "$(cat "$fuzzer_pid_file")"
+            break
+        fi
     else
         rm "$MONITOR/tmp"
+        [ -n "$monitor_stop_on_bug_out" ] && rm "$monitor_stop_on_bug_out"
     fi
-    counter=$(( counter + POLL ))
-    sleep $POLL
+    counter=$((counter + POLL))
+    sleep "$POLL"
 done &
 
+function start_fuzzer {
+    timeout "$TIMEOUT" "$FUZZER/run.sh" \
+        | multilog n2 "s$LOGSIZE" "$SHARED/log"
+    return "${PIPESTATUS[0]}"
+}
+start_fuzzer &
+fuzzer_pid=$!
+echo $fuzzer_pid >"$fuzzer_pid_file"
 echo "Campaign launched at $(date '+%F %R')"
-
-timeout $TIMEOUT "$FUZZER/run.sh" | \
-    multilog n2 s$LOGSIZE "$SHARED/log"
-code=${PIPESTATUS[0]}
+wait $fuzzer_pid
+code=$?
 
 if [ -f "$SHARED/log/current" ]; then
     cat "$SHARED/log/current"
@@ -79,5 +104,8 @@ fi
 
 echo "Campaign terminated at $(date '+%F %R') (exit code $code)"
 
-kill $(jobs -p)
+job_leader=$(jobs -p)
+if [ -n "$job_leader" ]; then
+    kill "$job_leader"
+fi
 exit "$code"

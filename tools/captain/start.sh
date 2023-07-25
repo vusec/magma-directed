@@ -9,6 +9,7 @@
 # - env FUZZARGS: fuzzer arguments
 # - env POLL: time (in seconds) between polls
 # - env TIMEOUT: time to run the campaign
+# + env STOP_ON_BUG: if set, stop the campaign when the target/all bugs are triggered
 # + env SHARED: path to host-local volume where fuzzer findings are saved
 #       (default: no shared volume)
 # + env AFFINITY: the CPU to bind the container to (default: no affinity)
@@ -39,7 +40,7 @@ IMG_NAME=$(magma_image_name)
 flags=(--cap-add=SYS_PTRACE --security-opt seccomp=unconfined
     --env=PROGRAM="$PROGRAM" --env=ARGS="$ARGS"
     --env=FUZZARGS="$FUZZARGS" --env=POLL="$POLL"
-    --env=TIMEOUT="$TIMEOUT")
+    --env=TIMEOUT="$TIMEOUT" --env=STOP_ON_BUG="$STOP_ON_BUG")
 
 if [ -n "$AFFINITY" ]; then
     flags+=(--cpuset-cpus="$AFFINITY" --env=AFFINITY="$AFFINITY")
