@@ -98,8 +98,6 @@ ENV CFLAGS=${BUILD_FLAGS}
 ENV CXXFLAGS=${BUILD_FLAGS}
 ENV LIBS="-l:magma.o -lrt"
 ENV LDFLAGS="-L$OUT -g"
-ENV MAGMA_BUG=$bug
-ENV MAGMA_BUG_FILE=${bug:+"$OUT/bug_$bug.diff"}
 
 COPY --chown=magma:magma \
     ${magma_root}/${magma_path}/all_findings.sh \
