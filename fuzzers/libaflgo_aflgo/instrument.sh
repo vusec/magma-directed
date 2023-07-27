@@ -12,7 +12,7 @@ set -e
 ##
 
 AFLGO_FUZZER=aflgo
-# shellcheck source=common_instrument.sh
+# shellcheck source=fuzzers/libaflgo_aflgo/common_instrument.sh
 source "$FUZZER/common_instrument.sh"
 
 # NOTE: We pass $OUT directly to the target build.sh script, since the artifact
