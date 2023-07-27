@@ -1,1 +1,0 @@
-../libaflgo_aflgo/common_instrument.sh

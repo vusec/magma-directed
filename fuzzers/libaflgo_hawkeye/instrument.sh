@@ -12,9 +12,23 @@ set -e
 ##
 
 AFLGO_FUZZER=hawkeye
-# shellcheck source=common_instrument.sh
-source "$FUZZER/common_instrument.sh"
 
-# NOTE: We pass $OUT directly to the target build.sh script, since the artifact
-#       itself is the fuzz target. In the case of Angora, we might need to
-#       replace $OUT by $OUT/fast and $OUT/track, for instance.
+export AFLGO_TARGETS="$OUT/aflgo_targets.txt"
+# shellcheck source=magma/directed.sh
+source "$MAGMA/directed.sh"
+store_target_lines "$AFLGO_TARGETS"
+
+"$MAGMA/build.sh"
+
+export SVF_DIR="$FUZZER/svf"
+export AFLGO_CLANG=clang-15
+export CC="libaflgo_${AFLGO_FUZZER}_cc"
+export CXX="libaflgo_${AFLGO_FUZZER}_cxx"
+
+SANITIZERS="-fsanitize=address"
+export CFLAGS="$CFLAGS $SANITIZERS"
+export CXXFLAGS="$CXXFLAGS $SANITIZERS"
+
+export LIB_FUZZING_ENGINE="$OUT/stub_rt.a"
+
+"$TARGET/build.sh"

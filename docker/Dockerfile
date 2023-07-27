@@ -59,8 +59,7 @@ RUN mkdir -p ${FUZZER} && chown magma:magma ${FUZZER}
 COPY --chown=magma:magma ${magma_root}/${fuzzer_path}/preinstall.sh ${FUZZER}/
 RUN ${FUZZER}/preinstall.sh
 USER magma:magma
-# Wildcards need DOCKER_BUILDKIT=1 on older docker versions
-COPY --chown=magma:magma ${magma_root}/${fuzzer_path}/* ${FUZZER}/
+COPY --chown=magma:magma ${magma_root}/${fuzzer_path} ${FUZZER}/
 # Docker does not support variables in --mount options
 # synch values with USER_ID and GROUP_ID
 RUN --mount=type=ssh,uid=1000,gid=1000 ${FUZZER}/fetch.sh
