@@ -6,6 +6,7 @@ set -e
 # - env TARGET: path to target work dir
 # - env OUT: path to directory where artifacts are stored
 # - env CC, CXX, FLAGS, LIBS, etc...
+# + env REQUIRE_BITCODE: set to require copying bitcode files into OUT
 ##
 
 if [ ! -d "$TARGET/repo" ]; then
@@ -23,7 +24,10 @@ cd "$TARGET/repo"
 make -j$(nproc) clean
 make -j$(nproc) all
 
-cp xmllint "$OUT/"
+cp -v xmllint "$OUT/"
+if [ -n "$REQUIRE_BITCODE" ]; then
+    cp -v xmllint*.bc "$OUT/"
+fi
 
 for fuzzer in libxml2_xml_read_memory_fuzzer libxml2_xml_reader_for_file_fuzzer; do
   $CXX $CXXFLAGS -std=c++11 -Iinclude/ -I"$TARGET/src/" \

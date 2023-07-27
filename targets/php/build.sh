@@ -6,6 +6,7 @@ set -e
 # - env TARGET: path to target work dir
 # - env OUT: path to directory where artifacts are stored
 # - env CC, CXX, FLAGS, LIBS, etc...
+# + env REQUIRE_BITCODE: set to require copying bitcode files into OUT
 ##
 
 if [ ! -d "$TARGET/repo" ]; then
@@ -74,7 +75,13 @@ sapi/cli/php sapi/fuzzer/generate_parser_corpus.php
 
 for fuzzer_path in "${programs[@]}"; do
     f=$(basename "$fuzzer_path")
-    cp "$fuzzer_path" "$OUT/${f/php-fuzz-/}"
+    cp -v "$fuzzer_path" "$OUT/${f/php-fuzz-/}"
+    if [ -n "$REQUIRE_BITCODE" ]; then
+        for bitcode in "$fuzzer_path"*.bc; do
+            bitcode_f=$(basename "$bitcode")
+            cp -v "$bitcode" "$OUT/${bitcode_f/php-fuzz-/}"
+        done
+    fi
 done
 
 for fuzzerName in `ls sapi/fuzzer/corpus`; do

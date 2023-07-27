@@ -5,6 +5,7 @@
 # - env TARGET: path to target work dir
 # - env OUT: path to directory where artifacts are stored
 # - env CC, CXX, FLAGS, LIBS, etc...
+# + env REQUIRE_BITCODE: set to require copying bitcode files into OUT
 ##
 
 if [ ! -d "$TARGET/repo" ]; then
@@ -78,7 +79,10 @@ make -j$(nproc) poppler poppler-cpp "${programs[@]}"
 EXTRA=""
 
 for program in "${programs[@]}"; do
-    cp "$WORK/poppler/utils/$program" "$OUT/"
+    cp -v "$WORK/poppler/utils/$program" "$OUT/"
+    if [ -n "$REQUIRE_BITCODE" ]; then
+        cp -v "$WORK/poppler/utils/$program"*.bc "$OUT/"
+    fi
 done
 
 for program in "${poppler_BUILD_PROGRAMS[@]}"; do

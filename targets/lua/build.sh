@@ -6,6 +6,7 @@ set -e
 # - env TARGET: path to target work dir
 # - env OUT: path to directory where artifacts are stored
 # - env CC, CXX, FLAGS, LIBS, etc...
+# + env REQUIRE_BITCODE: set to require copying bitcode files into OUT
 ##
 
 if [ ! -d "$TARGET/repo" ]; then
@@ -18,11 +19,14 @@ cd "$TARGET/repo"
 # build lua library
 make -j$(nproc) clean
 make -j$(nproc) liblua.a
-cp liblua.a "$OUT/"
+cp -v liblua.a "$OUT/"
 
 # build main lua binary
 make -j$(nproc) MYLDFLAGS="$CFLAGS" lua
-cp lua "$OUT/"
+cp -v lua "$OUT/"
+if [ -n "$REQUIRE_BITCODE" ]; then
+    cp -v lua*.bc "$OUT/"
+fi
 
 # build driver
 cp "$TARGET/src/fuzz_lua.c" .

@@ -6,6 +6,7 @@ set -e
 # - env TARGET: path to target work dir
 # - env OUT: path to directory where artifacts are stored
 # - env CC, CXX, FLAGS, LIBS, etc...
+# + env REQUIRE_BITCODE: set to require copying bitcode files into OUT
 ##
 
 if [ ! -d "$TARGET/repo" ]; then
@@ -25,7 +26,10 @@ make -j$(nproc) clean
 make -j$(nproc)
 make install
 
-cp "$WORK/bin/tiffcp" "$OUT/"
+cp -v "$WORK/bin/tiffcp" "$OUT/"
+if [ -n "$REQUIRE_BITCODE" ]; then
+    cp -v "$TARGET"/repo/tools/tiffcp*.bc "$OUT/"
+fi
 $CXX $CXXFLAGS -std=c++11 -I$WORK/include \
     contrib/oss-fuzz/tiff_read_rgba_fuzzer.cc -o $OUT/tiff_read_rgba_fuzzer \
     $WORK/lib/libtiffxx.a $WORK/lib/libtiff.a -lz -ljpeg -Wl,-Bstatic -llzma -Wl,-Bdynamic \
