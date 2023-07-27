@@ -101,6 +101,7 @@ ENV LDFLAGS="-L$OUT -g"
 
 COPY --chown=magma:magma \
     ${magma_root}/${magma_path}/all_findings.sh \
+    ${magma_root}/${magma_path}/directed.sh \
     ${magma_root}/${magma_path}/gather_resusage.sh \
     ${magma_root}/${magma_path}/run.sh \
     ${magma_root}/${magma_path}/runonce.sh \
