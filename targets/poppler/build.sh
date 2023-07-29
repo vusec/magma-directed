@@ -1,4 +1,5 @@
 #!/bin/bash -ex
+# shellcheck disable=SC2086
 
 ##
 # Pre-requirements:
@@ -14,6 +15,7 @@ if [ ! -d "$TARGET/repo" ]; then
 fi
 
 if [ -f "$FUZZER/configrc" ]; then
+    # shellcheck source=/dev/null
     source "$FUZZER/configrc"
 fi
 
@@ -25,13 +27,13 @@ mkdir -p "$WORK/lib" "$WORK/include"
 pushd "$TARGET/freetype2"
 ./autogen.sh
 ./configure --prefix="$WORK" --disable-shared PKG_CONFIG_PATH="$WORK/lib/pkgconfig"
-make -j$(nproc) clean
-make -j$(nproc)
+make -j"$(nproc)" clean
+make -j"$(nproc)"
 make install
 
 mkdir -p "$WORK/poppler"
 cd "$WORK/poppler"
-rm -rf *
+rm -rf ./*
 
 EXTRA=""
 test -n "$AR" && EXTRA="$EXTRA -DCMAKE_AR=$AR"
@@ -64,7 +66,9 @@ cmake "$TARGET/repo" \
     -DCMAKE_EXE_LINKER_FLAGS_INIT="$LIBS"
 
 if [ "${#poppler_BUILD_PROGRAMS[@]}" -eq 0 ]; then
-    poppler_BUILD_PROGRAMS=(pdftoppm pdfimages pdf_fuzzer)
+    # shellcheck source=targets/poppler/configrc
+    source "$TARGET/configrc"
+    poppler_BUILD_PROGRAMS=("${PROGRAMS[@]}")
 fi
 
 programs=()
@@ -75,7 +79,7 @@ for program in "${poppler_BUILD_PROGRAMS[@]}"; do
     fi
 done
 
-make -j$(nproc) poppler poppler-cpp "${programs[@]}"
+make -j"$(nproc)" poppler poppler-cpp "${programs[@]}"
 EXTRA=""
 
 for program in "${programs[@]}"; do
