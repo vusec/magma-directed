@@ -32,7 +32,7 @@ CXXFLAGS_COPY="$CXXFLAGS $SANITIZER_FLAGS"
 ADDITIONAL="-targets=$AFLGO_TARGETS -outdir=$AFLGO_TMP -flto -fuse-ld=gold -Wl,-plugin-opt=save-temps"
 export CFLAGS="$CFLAGS_COPY $ADDITIONAL"
 export CXXFLAGS="$CXXFLAGS_COPY $ADDITIONAL"
-REQUIRE_BITCODE=1 "$TARGET/build.sh"
+REQUIRE_COPY_BITCODE=1 "$TARGET/build.sh"
 
 # clean up
 cat "$AFLGO_TMP/BBnames.txt" | grep -v '^$' | rev | cut -d: -f2- | rev | sort | uniq >"$AFLGO_TMP/BBnames2.txt"

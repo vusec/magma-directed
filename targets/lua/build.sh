@@ -6,7 +6,7 @@ set -e
 # - env TARGET: path to target work dir
 # - env OUT: path to directory where artifacts are stored
 # - env CC, CXX, FLAGS, LIBS, etc...
-# + env REQUIRE_BITCODE: set to require copying bitcode files into OUT
+# + env REQUIRE_COPY_BITCODE: set to require copying bitcode files into OUT
 ##
 
 if [ ! -d "$TARGET/repo" ]; then
@@ -24,7 +24,7 @@ cp -v liblua.a "$OUT/"
 # build main lua binary
 make -j$(nproc) MYLDFLAGS="$CFLAGS" lua
 cp -v lua "$OUT/"
-if [ -n "$REQUIRE_BITCODE" ]; then
+if [ -n "$REQUIRE_COPY_BITCODE" ]; then
     cp -v lua*.bc "$OUT/"
 fi
 
