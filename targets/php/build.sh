@@ -15,6 +15,7 @@ if [ ! -d "$TARGET/repo" ]; then
 fi
 
 if [ -f "$FUZZER/configrc" ]; then
+    # shellcheck source=/dev/null
     source "$FUZZER/configrc"
 fi
 
@@ -56,7 +57,9 @@ make -j"$PAR_JOBS"
 popd
 
 if [ "${#php_BUILD_PROGRAMS[@]}" -eq 0 ]; then
-    php_BUILD_PROGRAMS=(json exif unserialize parser)
+    # shellcheck source=targets/php/configrc
+    source "$TARGET/configrc"
+    php_BUILD_PROGRAMS=("${PROGRAMS[@]}")
 fi
 
 programs=()
@@ -84,7 +87,7 @@ for fuzzer_path in "${programs[@]}"; do
     fi
 done
 
-for fuzzerName in `ls sapi/fuzzer/corpus`; do
+for fuzzerName in $(ls sapi/fuzzer/corpus); do
     mkdir -p "$TARGET/corpus/${fuzzerName}"
-    cp sapi/fuzzer/corpus/${fuzzerName}/* "$TARGET/corpus/${fuzzerName}/"
+    cp "sapi/fuzzer/corpus/${fuzzerName}/"* "$TARGET/corpus/${fuzzerName}/"
 done
