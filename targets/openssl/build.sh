@@ -14,6 +14,7 @@ if [ ! -d "$TARGET/repo" ]; then
 fi
 
 if [ -f "$FUZZER/configrc" ]; then
+    # shellcheck source=/dev/null
     source "$FUZZER/configrc"
 fi
 
@@ -37,7 +38,9 @@ export LDLIBS="$LIBS"
     $CFLAGS -fno-sanitize=alignment $CONFIGURE_FLAGS
 
 if [ "${#openssl_BUILD_PROGRAMS[@]}" -eq 0 ]; then
-    openssl_BUILD_PROGRAMS=(asn1 asn1parse bignum client server x509)
+    # shellcheck source=targets/openssl/configrc
+    source "$TARGET/configrc"
+    openssl_BUILD_PROGRAMS=("${PROGRAMS[@]}")
 fi
 
 programs=()
