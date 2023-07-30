@@ -3,6 +3,7 @@ import argparse
 from pathlib import Path
 
 MAGMA = Path(__file__).resolve().parent.parent
+FUZZERS = MAGMA / "fuzzers"
 
 
 def cli() -> dict:
@@ -14,12 +15,15 @@ def cli() -> dict:
 
 
 def main(file: Path) -> int:
+    file_rel_fuzzers = file.resolve().relative_to(FUZZERS)
+    fuzzer_og = file_rel_fuzzers.parts[0]
+    file_path = file_rel_fuzzers.relative_to(fuzzer_og)
     contents = file.read_text()
-    for fuzzer in (MAGMA / "fuzzers").iterdir():
-        if fuzzer.name == file.parent.name:
+    for fuzzer in FUZZERS.iterdir():
+        if fuzzer.name == fuzzer_og:
             continue
 
-        other_file = fuzzer / file.name
+        other_file = fuzzer / file_path
         if not other_file.is_file():
             continue
 
