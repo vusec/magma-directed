@@ -233,9 +233,10 @@ trap cleanup EXIT
 
 # schedule campaigns
 for FUZZER in "${FUZZERS[@]}"; do
-    export FUZZER NUMWORKERS
+    export FUZZER NUMWORKERS DIRECTED_DYNAMIC
     NUMWORKERS="$(get_var_or_default "$FUZZER" CAMPAIGN_WORKERS)"
     DIRECTED="$(meta_var "$FUZZER" DIRECTED)"
+    DIRECTED_DYNAMIC="$(meta_var "$FUZZER" DIRECTED_DYNAMIC)"
 
     IFS=' ' read -r -a TARGETS <<<"$(get_var_or_default "$FUZZER" TARGETS)"
     for TARGET in "${TARGETS[@]}"; do
@@ -244,7 +245,7 @@ for FUZZER in "${FUZZERS[@]}"; do
 
         # build the Docker image
 
-        if [ -n "$DIRECTED" ]; then
+        if [ -n "$DIRECTED" ] && [ -z "$DIRECTED_DYNAMIC" ]; then
             BUGS_BUILT=()
             IFS=' ' read -r -a BUGS <<<"$(get_var_or_default "$FUZZER" "$TARGET" BUGS)"
             for BUG in "${BUGS[@]}"; do
@@ -282,6 +283,9 @@ for FUZZER in "${FUZZERS[@]}"; do
             ARGS="$(get_var_or_default "$FUZZER" "$TARGET" "$PROGRAM" ARGS)"
 
             if [ -n "$DIRECTED" ]; then
+                if [ -n "$DIRECTED_DYNAMIC" ]; then
+                    IFS=' ' read -r -a BUGS_BUILT <<<"$(get_var_or_default "$FUZZER" "$TARGET" BUGS)"
+                fi
                 for BUG in "${BUGS_BUILT[@]}"; do
                     export BUG
                     echo_time "Starting campaigns for bug $BUG: $PROGRAM $ARGS"
