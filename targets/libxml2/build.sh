@@ -7,6 +7,7 @@ set -ex
 # - env OUT: path to directory where artifacts are stored
 # - env CC, CXX, FLAGS, LIBS, etc...
 # + env REQUIRE_COPY_BITCODE: set to require copying bitcode files into OUT
+# + env REQUIRE_GET_BITCODE: command to use to extract bitcode for each program
 ##
 
 if [ ! -d "$TARGET/repo" ]; then
@@ -34,3 +35,9 @@ for fuzzer in libxml2_xml_read_memory_fuzzer libxml2_xml_reader_for_file_fuzzer;
       "$TARGET/src/$fuzzer.cc" -o "$OUT/$fuzzer" \
       .libs/libxml2.a $LDFLAGS $LIBS -lz -llzma
 done
+
+if [ -n "$REQUIRE_GET_BITCODE" ]; then
+    $REQUIRE_GET_BITCODE "$OUT/xmllint"
+    $REQUIRE_GET_BITCODE "$OUT/libxml2_xml_read_memory_fuzzer"
+    $REQUIRE_GET_BITCODE "$OUT/libxml2_xml_reader_for_file_fuzzer"
+fi

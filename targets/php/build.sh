@@ -7,6 +7,7 @@ set -ex
 # - env OUT: path to directory where artifacts are stored
 # - env CC, CXX, FLAGS, LIBS, etc...
 # + env REQUIRE_COPY_BITCODE: set to require copying bitcode files into OUT
+# + env REQUIRE_GET_BITCODE: command to use to extract bitcode for each program
 ##
 
 if [ ! -d "$TARGET/repo" ]; then
@@ -84,6 +85,9 @@ for fuzzer_path in "${programs[@]}"; do
             bitcode_f=$(basename "$bitcode")
             cp -v "$bitcode" "$OUT/${bitcode_f/php-fuzz-/}"
         done
+    fi
+    if [ -n "$REQUIRE_GET_BITCODE" ]; then
+        $REQUIRE_GET_BITCODE "$OUT/${f/php-fuzz-/}"
     fi
 done
 

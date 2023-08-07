@@ -7,6 +7,7 @@
 # - env OUT: path to directory where artifacts are stored
 # - env CC, CXX, FLAGS, LIBS, etc...
 # + env REQUIRE_COPY_BITCODE: set to require copying bitcode files into OUT
+# + env REQUIRE_GET_BITCODE: command to use to extract bitcode for each program
 ##
 
 if [ ! -d "$TARGET/repo" ]; then
@@ -87,6 +88,9 @@ for program in "${programs[@]}"; do
     if [ -n "$REQUIRE_COPY_BITCODE" ]; then
         cp -v "$WORK/poppler/utils/$program"*.bc "$OUT/"
     fi
+    if [ -n "$REQUIRE_GET_BITCODE" ]; then
+        $REQUIRE_GET_BITCODE "$OUT/$program"
+    fi
 done
 
 for program in "${poppler_BUILD_PROGRAMS[@]}"; do
@@ -96,5 +100,8 @@ for program in "${poppler_BUILD_PROGRAMS[@]}"; do
             "$WORK/poppler/cpp/libpoppler-cpp.a" "$WORK/poppler/libpoppler.a" \
             "$WORK/lib/libfreetype.a" $LDFLAGS $LIBS -ljpeg -lz \
             -lopenjp2 -lpng -ltiff -llcms2 -lm -lpthread -pthread
+        if [ -n "$REQUIRE_GET_BITCODE" ]; then
+            $REQUIRE_GET_BITCODE "$OUT/pdf_fuzzer"
+        fi
     fi
 done
