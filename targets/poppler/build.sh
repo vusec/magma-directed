@@ -42,6 +42,7 @@ test -n "$RANLIB" && EXTRA="$EXTRA -DCMAKE_RANLIB=$RANLIB"
 
 cmake "$TARGET/repo" \
     $EXTRA \
+    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
     -DCMAKE_BUILD_TYPE=debug \
     -DBUILD_SHARED_LIBS=OFF \
     -DFONT_CONFIGURATION=generic \
@@ -65,6 +66,8 @@ cmake "$TARGET/repo" \
     -DFREETYPE_LIBRARY="$WORK/lib/libfreetype.a" \
     -DICONV_LIBRARIES="/usr/lib/x86_64-linux-gnu/libc.so" \
     -DCMAKE_EXE_LINKER_FLAGS_INIT="$LIBS"
+
+cp -v compile_commands.json "$OUT/"
 
 if [ "${#poppler_BUILD_PROGRAMS[@]}" -eq 0 ]; then
     # shellcheck source=targets/poppler/configrc
