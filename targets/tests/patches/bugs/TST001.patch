@@ -1,0 +1,18 @@
+diff --color -Niu src/lib.c src-buggy/lib.c
+--- src/lib.c	2023-08-02 15:35:36.904068734 +0200
++++ src-buggy/lib.c	2023-08-02 15:45:31.854238825 +0200
+@@ -1,6 +1,14 @@
+ #include <stdio.h>
++#include <stdlib.h>
+ 
+ void target_function()
+ {
+     printf("Target function hit!\n");
++#ifdef MAGMA_ENABLE_FIXES
++#else
++#ifdef MAGMA_ENABLE_CANARIES
++    MAGMA_LOG("%MAGMA_BUG%", 1);
++#endif
++    abort();
++#endif
+ }

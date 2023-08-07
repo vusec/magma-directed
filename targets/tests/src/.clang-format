@@ -1,0 +1,7 @@
+---
+BasedOnStyle: LLVM
+AllowShortFunctionsOnASingleLine: Empty
+BreakBeforeBraces: Linux
+ColumnLimit: 100
+IndentWidth: 4
+---
