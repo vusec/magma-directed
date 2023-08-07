@@ -1,0 +1,20 @@
+diff --git a/patches/afl/afl-llvm-pass.so.cc b/patches/afl/afl-llvm-pass.so.cc
+index a928476..f4faf50 100644
+--- a/patches/afl/afl-llvm-pass.so.cc
++++ b/patches/afl/afl-llvm-pass.so.cc
+@@ -157,7 +157,14 @@ class AFLCoverage : public ModulePass {
+         "getSBoxValue",
+         "BlockCopy",
+         "xtime",
+-        "cgc_xor"
++        "cgc_xor",
++        "OPENSSL_cpuid_setup",
++        "resolve_addslashes",
++        "resolve_base64_decode",
++        "resolve_base64_encode",
++        "resolve_crc32_x86_simd_update",
++        "resolve_stripslashes",
++        "zend_cpu_supports_"
+ 	    // These functions form a part of the libcgc and as such does not make sense to instrument these
+         // "_pcre_find_bracket",
+         // "_pcre_is_newline",

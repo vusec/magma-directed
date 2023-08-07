@@ -1,0 +1,34 @@
+diff --git a/patches/afl/afl-fuzz.c b/patches/afl/afl-fuzz.c
+index fc18643..0e943de 100644
+--- a/patches/afl/afl-fuzz.c
++++ b/patches/afl/afl-fuzz.c
+@@ -245,6 +245,7 @@ int comm_server(int mode) {
+     struct addrinfo hints, *servinfo, *p;
+     int rv;
+     char s[INET6_ADDRSTRLEN];
++    int connection_trials = 0;
+ 
+     memset(&hints, 0, sizeof hints);
+     hints.ai_family = AF_UNSPEC;
+@@ -254,6 +255,7 @@ int comm_server(int mode) {
+         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
+         return 1;
+     }
++try_again:
+     for (p = servinfo; p != NULL; p = p->ai_next) {
+         if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
+             perror("client:socket");
+@@ -270,7 +272,12 @@ int comm_server(int mode) {
+     }
+ 
+     if (p == NULL) {
+-        fprintf(stderr, "client: failed to connect\n");
++        fprintf(stderr, "client: failed to connect (trial %d)\n", connection_trials+1);
++        if (connection_trials < 120) {
++            connection_trials++;
++            sleep(1);
++            goto try_again;
++        }
+         return 2;
+     }
+ 
