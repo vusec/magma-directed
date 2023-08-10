@@ -37,7 +37,7 @@ export LDLIBS="$LIBS"
     -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION no-shared no-module \
     enable-tls1_3 enable-rc5 enable-md2 enable-ec_nistp_64_gcc_128 enable-ssl3 \
     enable-ssl3-method enable-nextprotoneg enable-weak-ssl-ciphers \
-    $CFLAGS -fno-sanitize=alignment $CONFIGURE_FLAGS
+    -fno-sanitize=alignment $CONFIGURE_FLAGS
 
 if [ "${#openssl_BUILD_PROGRAMS[@]}" -eq 0 ]; then
     # shellcheck source=targets/openssl/configrc
