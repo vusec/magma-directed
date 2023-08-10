@@ -1,0 +1,51 @@
+diff --git a/llvm_mode/afl-clang-fast.c b/llvm_mode/afl-clang-fast.c
+index 28bf281..ef200a5 100644
+--- a/llvm_mode/afl-clang-fast.c
++++ b/llvm_mode/afl-clang-fast.c
+@@ -137,13 +137,26 @@ static void edit_params(u32 argc, char** argv) {
+ 
+   if (argc == 1 && !strcmp(argv[1], "-v")) maybe_linking = 0;
+ 
++  u8 is_asm = 0;
++  int argc_tmp = argc;
++  char **argv_tmp = argv;
++  while (--argc_tmp) {
++    u8* cur = *(++argv_tmp);
++    // check if argument is an assembly source file
++    if (strcmp(cur, "-") && strlen(cur) > 2 && !strcmp(cur + strlen(cur) - 2, ".s")) {
++        is_asm = 1;
++    }
++  }
++
+   while (--argc) {
+     u8* cur = *(++argv);
+ 
+     if (!strncmp(cur, "-distance", 9)
+         || !strncmp(cur, "-targets", 8)
+-        || !strncmp(cur, "-outdir", 7))
++        || !strncmp(cur, "-outdir", 7)) {
++      if (is_asm) continue;
+       cc_params[cc_par_cnt++] = "-mllvm";
++    }
+ 
+     if (!strcmp(cur, "-m32")) bit_mode = 32;
+     if (!strcmp(cur, "-m64")) bit_mode = 64;
+@@ -355,6 +368,18 @@ int main(int argc, char** argv) {
+ 
+   edit_params(argc, argv);
+ 
++  if (getenv("AFL_DEBUG")) {
++
++    int i = 0;
++
++    SAYF(cCYA "Command line used:\n");
++
++    while (cc_params[i]) SAYF("%s ", cc_params[i++]);
++
++    SAYF(cRST "\n");
++
++  }
++
+   execvp(cc_params[0], (char**)cc_params);
+ 
+   FATAL("Oops, failed to execute '%s' - check your PATH", cc_params[0]);

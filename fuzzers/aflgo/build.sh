@@ -19,6 +19,8 @@ export AFL_CC=$CC
 export AFL_CXX=$CXX
 
 cd "$FUZZER/repo"
+git reset --hard
+git apply "$FUZZER/src/fuzzer.patch"
 make clean all
 (cd llvm_mode && make clean all)
 (cd distance_calculator && cmake -GNinja . && cmake --build .)
