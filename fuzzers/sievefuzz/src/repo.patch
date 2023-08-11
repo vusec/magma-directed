@@ -52,8 +52,20 @@ index a928476..f4faf50 100644
  	    // These functions form a part of the libcgc and as such does not make sense to instrument these
          // "_pcre_find_bracket",
          // "_pcre_is_newline",
+diff --git a/patches/svf/svf-af.h b/patches/svf/svf-af.h
+index 562f4e8..8fe3952 100644
+--- a/patches/svf/svf-af.h
++++ b/patches/svf/svf-af.h
+@@ -23,6 +23,7 @@
+ // #define PORT "3490"
+ #define BACKLOG 10
+ #define MAXDATASIZE 5 
++#define INDIRECT_FILE_SEP '@'
+ 
+ using namespace llvm;
+ using namespace std;
 diff --git a/patches/svf/svf-ex.cpp b/patches/svf/svf-ex.cpp
-index 167f5d4..caaf30e 100644
+index 167f5d4..01b1033 100644
 --- a/patches/svf/svf-ex.cpp
 +++ b/patches/svf/svf-ex.cpp
 @@ -68,6 +68,8 @@ static llvm::cl::opt<bool> GetIndirect("get-indirect", llvm::cl::init(false), ll
@@ -80,8 +92,30 @@ index 167f5d4..caaf30e 100644
      // Get the port to run the static analysis server on
      std::string port = Port;
  
+@@ -641,7 +651,9 @@ int main(int argc, char ** argv) {
+                                      // caller_str, callee_str - endpoint function names which are used to identify which functions to 
+                                      // add as part of the descendants of the indirect calls
+                                      allowed_indirect.insert(calledge->edgeFlag);
+-                                     indirect_file << calledge->edgeFlag << " " << caller_str << " " << callee_str << "\n";
++                                     indirect_file << calledge->edgeFlag
++                                        << INDIRECT_FILE_SEP << caller_str
++                                        << INDIRECT_FILE_SEP << callee_str << "\n";
+                                      indirect_file.close();
+                                  }
+ 
+@@ -794,7 +806,9 @@ int main(int argc, char ** argv) {
+                                      // caller_str, callee_str - endpoint function names which are used to identify which functions to 
+                                      // add as part of the descendants of the indirect calls
+                                      allowed_indirect.insert(calledge->edgeFlag);
+-                                     indirect_file << calledge->edgeFlag << " " << caller_str << " " << callee_str << "\n";
++                                     indirect_file << calledge->edgeFlag
++                                        << INDIRECT_FILE_SEP << caller_str
++                                        << INDIRECT_FILE_SEP << callee_str << "\n";
+                                      indirect_file.close();
+                                  }
+ 
 diff --git a/patches/svf/util.cpp b/patches/svf/util.cpp
-index bf87cd6..2d5573e 100644
+index bf87cd6..c4b5462 100644
 --- a/patches/svf/util.cpp
 +++ b/patches/svf/util.cpp
 @@ -78,11 +78,16 @@ PTACallGraphNode* get_callgraph_node(
@@ -102,3 +136,27 @@ index bf87cd6..2d5573e 100644
      const SVFFunction* target_svf = svfModule->getSVFFunction(target_function);
      PTACallGraphNode* target_node = callgraph->getCallGraphNode(target_svf);
      return target_node;
+@@ -161,7 +166,7 @@ const Instruction* get_inst(std::string functionName, SVFModule* svfModule) {
+ void process_indirect_edgeids(std::string& metadata, std::set<uint64_t>& allowed_indirect) {
+     std::stringstream ss(metadata);
+     std::string token;
+-    char delim = ' ';
++    char delim = INDIRECT_FILE_SEP;
+     // The first token corresponds to the indirect call edge
+     // Add it to the list of allowed indirect call edges
+     while (std::getline(ss, token, delim)) {
+@@ -175,12 +180,12 @@ void process_indirect_callees(std::string& metadata, std::set<uint64_t>& allowed
+     std::stringstream ss(metadata);
+     std::string token, callee_str;
+     int count = 0;
+-    char delim = ' ';
++    char delim = INDIRECT_FILE_SEP;
+     while (std::getline(ss, token, delim)) {
+         // The first token corresponds to the indirect call edge
+         // Add it to the list of allowed indirect call edges
+         if (count == 0) {
+-	    allowed_indirect.insert(std::stol(token));
++            allowed_indirect.insert(std::stol(token));
+             count += 1;
+         }
+         // The second token corresponds to the caller string. We don't do anything with it as of now
