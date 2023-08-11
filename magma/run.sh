@@ -45,9 +45,34 @@ if [ ${#seeds[@]} -eq 0 ]; then
     exit 1
 fi
 
+# launch fuzzer prerun script in parallel (if exists)
+if [ -f "$FUZZER/prerun.sh" ]; then
+    export MAGMA_PRERUN_DONE="$SHARED/prerun.done"
+    rm -f "$MAGMA_PRERUN_DONE"
+    "$FUZZER/prerun.sh" &
+    prerun_pid=$!
+    prerun_time=0
+    # wait until prerun is terminated or the MAGMA_PRERUN_DONE file is created
+    while [ ! -f "$MAGMA_PRERUN_DONE" ] && kill -0 "$prerun_pid" 2>/dev/null; do
+        sleep 1
+        prerun_time=$((prerun_time + 1))
+    done
+    if [ -f "$MAGMA_PRERUN_DONE" ]; then
+        echo "Preprocessing script finished in $prerun_time seconds; contents:"
+        cat "$MAGMA_PRERUN_DONE"
+        echo
+    else
+        echo "Preprocessing script terminated after $prerun_time seconds"
+        kill -9 "$prerun_pid"
+        exit 1
+    fi
+fi
+
 # launch the fuzzer in parallel with the monitor
 rm -f "$MONITOR/tmp"*
+shopt -s nullglob
 polls=("$MONITOR"/*)
+shopt -u nullglob
 if [ ${#polls[@]} -eq 0 ]; then
     counter=0
 else
