@@ -47,7 +47,7 @@ fi
 
 # launch fuzzer prerun script in parallel (if exists)
 if [ -f "$FUZZER/prerun.sh" ]; then
-    export MAGMA_PRERUN_DONE="$SHARED/prerun.done"
+    export MAGMA_PRERUN_DONE="$SHARED/prerun-done.txt"
     rm -f "$MAGMA_PRERUN_DONE"
     "$FUZZER/prerun.sh" &
     prerun_pid=$!
