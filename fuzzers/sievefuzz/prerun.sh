@@ -53,7 +53,7 @@ fi
 fn=$(llvm-cxxfilt-9 <"$OUT/target_functions.txt")
 echo "Targeting bug $MAGMA_BUG in function $fn." >&2
 
-"$FUZZER"/repo/third_party/SVF/Release-build/bin/svf-ex \
+exec "$FUZZER"/repo/third_party/SVF/Release-build/bin/svf-ex \
     -p=6200 -f="$fn" \
     --preprocessing-done="$MAGMA_PRERUN_DONE" \
     --tag="$SHARED/findings/000" \
