@@ -159,10 +159,44 @@ index 167f5d4..3213326 100644
  
 diff --git a/patches/svf/svf.patch b/patches/svf/svf.patch
 new file mode 100644
-index 0000000..40b976b
+index 0000000..7a85cb9
 --- /dev/null
 +++ b/patches/svf/svf.patch
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,114 @@
++diff --git a/include/SVF-FE/CPPUtil.h b/include/SVF-FE/CPPUtil.h
++index a1f20e08..4eda7332 100644
++--- a/include/SVF-FE/CPPUtil.h
+++++ b/include/SVF-FE/CPPUtil.h
++@@ -51,6 +51,29 @@ struct DemangledName
++ 
++ struct DemangledName demangle(const std::string name);
++ 
+++/*
+++ * Get the vtable struct of a class.
+++ *
+++ * Given the class:
+++ *
+++ *   class A {
+++ *     virtual ~A();
+++ *   };
+++ *   A::~A() = default;
+++ *
+++ *  The corresponding vtable @_ZTV1A is of type:
+++ *
+++ *    { [4 x i8*] }
+++ *
+++ *  If the program has been compiled with AddressSanitizer,
+++ *  the vtable will have redzones and appear as:
+++ *
+++ *    { { [4 x i8*] }, [32 x i8] }
+++ *
+++ *  See https://github.com/SVF-tools/SVF/issues/1114 for more.
+++ */
+++const ConstantStruct *getVtblStruct(const GlobalValue *vtbl);
+++
++ std::string getBeforeBrackets(const std::string name);
++ bool isValVtbl(const Value *val);
++ bool isLoadVtblInst(const LoadInst *loadInst);
 +diff --git a/lib/Graphs/ICFG.cpp b/lib/Graphs/ICFG.cpp
 +index 2f800b01..a30af381 100644
 +--- a/lib/Graphs/ICFG.cpp
@@ -179,8 +213,72 @@ index 0000000..40b976b
 +             addCallEdge(CallBlockNode, calleeEntryNode, cs);
 + 
 +             if (!isExtCall(callee))
++diff --git a/lib/SVF-FE/CHG.cpp b/lib/SVF-FE/CHG.cpp
++index 764b840c..e63acd1c 100644
++--- a/lib/SVF-FE/CHG.cpp
+++++ b/lib/SVF-FE/CHG.cpp
++@@ -120,8 +120,7 @@ void CHGraph::buildCHGNodes(const GlobalValue *globalvalue)
++ {
++     if (isValVtbl(globalvalue) && globalvalue->getNumOperands() > 0)
++     {
++-        const ConstantStruct *vtblStruct = SVFUtil::dyn_cast<ConstantStruct>(globalvalue->getOperand(0));
++-        assert(vtblStruct && "Initializer of a vtable not a struct?");
+++        const ConstantStruct *vtblStruct = cppUtil::getVtblStruct(globalvalue);
++         string className = getClassNameFromVtblObj(globalvalue);
++         if (!getNode(className))
++             createNode(className);
++@@ -422,10 +421,7 @@ void CHGraph::analyzeVTables(const Module &M)
++         const GlobalValue *globalvalue = SVFUtil::dyn_cast<const GlobalValue>(&(*I));
++         if (isValVtbl(globalvalue) && globalvalue->getNumOperands() > 0)
++         {
++-            const ConstantStruct *vtblStruct =
++-                SVFUtil::dyn_cast<ConstantStruct>(globalvalue->getOperand(0));
++-            assert(vtblStruct && "Initializer of a vtable not a struct?");
++-
+++            const ConstantStruct *vtblStruct = cppUtil::getVtblStruct(globalvalue);
++             string vtblClassName = getClassNameFromVtblObj(globalvalue);
++             CHNode *node = getNode(vtblClassName);
++             assert(node && "node not found?");
++diff --git a/lib/SVF-FE/CPPUtil.cpp b/lib/SVF-FE/CPPUtil.cpp
++index d8c9c960..ed8e15f8 100644
++--- a/lib/SVF-FE/CPPUtil.cpp
+++++ b/lib/SVF-FE/CPPUtil.cpp
++@@ -100,6 +100,19 @@ static string getBeforeParenthesis(const string name)
++     return name.substr(0, pos);
++ }
++ 
+++const ConstantStruct *cppUtil::getVtblStruct(const GlobalValue *vtbl)
+++{
+++    const ConstantStruct *vtblStruct = SVFUtil::dyn_cast<ConstantStruct>(vtbl->getOperand(0));
+++    assert(vtblStruct && "Initializer of a vtable not a struct?");
+++
+++    if (vtblStruct->getNumOperands() == 2 &&
+++        SVFUtil::isa<ConstantStruct>(vtblStruct->getOperand(0)) &&
+++        vtblStruct->getOperand(1)->getType()->isArrayTy())
+++        return SVFUtil::cast<ConstantStruct>(vtblStruct->getOperand(0));
+++
+++    return vtblStruct;
+++}
+++
++ string cppUtil::getBeforeBrackets(const string name)
++ {
++     if (name[name.size() - 1] != '>')
++diff --git a/lib/SVF-FE/DCHG.cpp b/lib/SVF-FE/DCHG.cpp
++index 139f9ff5..46286488 100644
++--- a/lib/SVF-FE/DCHG.cpp
+++++ b/lib/SVF-FE/DCHG.cpp
++@@ -178,8 +178,7 @@ void DCHGraph::buildVTables(const Module &module)
++             node->setVTable(gv);
++             vtblToTypeMap[gv] = getCanonicalType(type);
++ 
++-            const ConstantStruct *vtbls = SVFUtil::dyn_cast<ConstantStruct>(gv->getOperand(0));
++-            assert(vtbls && "unexpected vtable type");
+++            const ConstantStruct *vtbls = cppUtil::getVtblStruct(gv);
++             for (unsigned nthVtbl = 0; nthVtbl < vtbls->getNumOperands(); ++nthVtbl)
++             {
++                 const ConstantArray *vtbl = SVFUtil::dyn_cast<ConstantArray>(vtbls->getOperand(nthVtbl));
 diff --git a/patches/svf/util.cpp b/patches/svf/util.cpp
-index bf87cd6..c4b5462 100644
+index bf87cd6..43573d5 100644
 --- a/patches/svf/util.cpp
 +++ b/patches/svf/util.cpp
 @@ -78,11 +78,16 @@ PTACallGraphNode* get_callgraph_node(
@@ -201,7 +299,30 @@ index bf87cd6..c4b5462 100644
      const SVFFunction* target_svf = svfModule->getSVFFunction(target_function);
      PTACallGraphNode* target_node = callgraph->getCallGraphNode(target_svf);
      return target_node;
-@@ -161,7 +166,7 @@ const Instruction* get_inst(std::string functionName, SVFModule* svfModule) {
+@@ -116,7 +121,7 @@ bool isReachable(
+             PTACallGraphEdge* edge = *it;
+             // Check if there is at least one indirect edge between two functions and that the function has not been inlined
+             // if ((edge->isIndirectCallEdge()) || (!(edge->isIndirectCallEdge()) && !(edge->isDirectCallEdge()))) {
+-            if (edge->isIndirectCallEdge() && (inlined_funcs.find((edge->getSrcNode()->getFunction()->getLLVMFun()->getName().str())) == inlined_funcs.end())) {
++            if (edge->isIndirectCallEdge() && (inlined_funcs.find(demangleString(edge->getSrcNode()->getFunction()->getLLVMFun()->getName().str().c_str())) == inlined_funcs.end())) {
+                 // If there is an indirect edge, and its not been observed before, ignore this
+                 if (allowed_indirect.find(edge->edgeFlag) == allowed_indirect.end()) { 
+                     continue ;
+@@ -132,11 +137,12 @@ bool isReachable(
+ 
+ // Get SVF function corresponding to function name 
+ const Function* get_function(std::string functionName, SVFModule* svfModule) {
++    std::string demangled_fn = demangleString(functionName.c_str());
+     const Function *function = NULL;
+     for (SVFModule::llvm_const_iterator I = svfModule->llvmFunBegin(), E =
+                 svfModule->llvmFunEnd(); I != E; ++I) {
+         // std::cout << target_function->getName().str() << " ";
+-        if ((functionName.compare((*I)->getName().str())) == 0) { 
++        if (demangled_fn.compare(demangleString((*I)->getName().str().c_str())) == 0) { 
+ 	        function = *I;
+             break;
+         }
+@@ -161,7 +167,7 @@ const Instruction* get_inst(std::string functionName, SVFModule* svfModule) {
  void process_indirect_edgeids(std::string& metadata, std::set<uint64_t>& allowed_indirect) {
      std::stringstream ss(metadata);
      std::string token;
@@ -210,7 +331,7 @@ index bf87cd6..c4b5462 100644
      // The first token corresponds to the indirect call edge
      // Add it to the list of allowed indirect call edges
      while (std::getline(ss, token, delim)) {
-@@ -175,12 +180,12 @@ void process_indirect_callees(std::string& metadata, std::set<uint64_t>& allowed
+@@ -175,12 +181,12 @@ void process_indirect_callees(std::string& metadata, std::set<uint64_t>& allowed
      std::stringstream ss(metadata);
      std::string token, callee_str;
      int count = 0;
@@ -225,6 +346,15 @@ index bf87cd6..c4b5462 100644
              count += 1;
          }
          // The second token corresponds to the caller string. We don't do anything with it as of now
+@@ -198,7 +204,7 @@ void process_indirect_callees(std::string& metadata, std::set<uint64_t>& allowed
+     PTACallGraphNode* callee_node = get_callgraph_node(svfModule, callgraph, callee_str);
+ 
+     // Insert the callee of the indirect call into the allowlist 
+-    allowlist.insert(callee_node->getFunction()->getLLVMFun()->getName().str());
++    allowlist.insert(demangleString(callee_node->getFunction()->getLLVMFun()->getName().str().c_str()));
+ 
+     // Insert all the descendants of the callee into the allowlist
+     // getForwardDescendants(callee_node, target_svf, allowed_indirect, allowlist, callgraph); 
 diff --git a/third_party/install_svf.sh b/third_party/install_svf.sh
 index 8cec1c7..9826395 100755
 --- a/third_party/install_svf.sh
