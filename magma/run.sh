@@ -129,8 +129,7 @@ fi
 
 echo "Campaign terminated at $(date '+%F %R') (exit code $code)"
 
-job_leader=$(jobs -p)
-if [ -n "$job_leader" ]; then
-    kill "$job_leader"
-fi
+for job_leader in $(jobs -p); do
+    [ -n "$job_leader" ] && kill "$job_leader"
+done
 exit "$code"
