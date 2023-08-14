@@ -33,10 +33,10 @@ index fc18643..0e943de 100644
      }
  
 diff --git a/patches/afl/afl-llvm-pass.so.cc b/patches/afl/afl-llvm-pass.so.cc
-index a928476..f4faf50 100644
+index a928476..54056a1 100644
 --- a/patches/afl/afl-llvm-pass.so.cc
 +++ b/patches/afl/afl-llvm-pass.so.cc
-@@ -157,7 +157,14 @@ class AFLCoverage : public ModulePass {
+@@ -157,7 +157,15 @@ class AFLCoverage : public ModulePass {
          "getSBoxValue",
          "BlockCopy",
          "xtime",
@@ -48,10 +48,39 @@ index a928476..f4faf50 100644
 +        "resolve_base64_encode",
 +        "resolve_crc32_x86_simd_update",
 +        "resolve_stripslashes",
-+        "zend_cpu_supports_"
++        "zend_cpu_supports_",
++        "_GLOBAL__sub_I_",
  	    // These functions form a part of the libcgc and as such does not make sense to instrument these
          // "_pcre_find_bracket",
          // "_pcre_is_newline",
+diff --git a/patches/svf/fence.cpp b/patches/svf/fence.cpp
+index 6f7c5e8..52601dd 100644
+--- a/patches/svf/fence.cpp
++++ b/patches/svf/fence.cpp
+@@ -43,7 +43,7 @@ void traverseBackwardsFlowSensitive(
+                         const SVFFunction* prevFun = libNode->getFun();
+                         const Function* candidate = prevFun->getLLVMFun();
+                         spdlog::debug("Lib detected:{}", candidate->getName().str());
+-                        allowlist.insert(candidate->getName().str());
++                        allowlist.insert(demangleString(candidate->getName().str().c_str()));
+                     }
+                 }
+             }
+@@ -80,12 +80,12 @@ void traverseBackwardsFlowSensitive(
+                     if (isReachable(prevFun, targetFun, callgraph, allowed_indirect, inlined_funcs)) {
+                         spdlog::debug("  {} can be reached by {}", targetFun->getLLVMFun()->getName().str(), candidate->getName().str());
+                         worklist.push(prevNode);
+-                        allowlist.insert(candidate->getName().str());
++                        allowlist.insert(demangleString(candidate->getName().str().c_str()));
+                     }
+                 }
+                 else {
+                     spdlog::debug("  Adding non-call edge");
+-                    allowlist.insert(candidate->getName().str());
++                    allowlist.insert(demangleString(candidate->getName().str().c_str()));
+                     worklist.push(prevNode);
+                 }
+                 visited.insert(edge);
 diff --git a/patches/svf/svf-af.h b/patches/svf/svf-af.h
 index 562f4e8..8fe3952 100644
 --- a/patches/svf/svf-af.h
@@ -65,7 +94,7 @@ index 562f4e8..8fe3952 100644
  using namespace llvm;
  using namespace std;
 diff --git a/patches/svf/svf-ex.cpp b/patches/svf/svf-ex.cpp
-index 167f5d4..01b1033 100644
+index 167f5d4..3213326 100644
 --- a/patches/svf/svf-ex.cpp
 +++ b/patches/svf/svf-ex.cpp
 @@ -68,6 +68,8 @@ static llvm::cl::opt<bool> GetIndirect("get-indirect", llvm::cl::init(false), ll
@@ -92,7 +121,21 @@ index 167f5d4..01b1033 100644
      // Get the port to run the static analysis server on
      std::string port = Port;
  
-@@ -641,7 +651,9 @@ int main(int argc, char ** argv) {
+@@ -247,9 +257,10 @@ int main(int argc, char ** argv) {
+         // Create a list of inlined functions by iterating through the functions of statically analyzed binary
+         for (SVFModule::llvm_const_iterator I = svfModule->llvmFunBegin(), E =
+                     svfModule->llvmFunEnd(); I != E; ++I) {
+-	    if (uninlined_funcs.find((*I)->getName().str()) == uninlined_funcs.end()) {
+-               spdlog::info("Inlined:{}", (*I)->getName().str());
+-	       inlined_funcs.insert((*I)->getName().str());
++            std::string demangled_name = demangleString((*I)->getName().str().c_str());
++            if (uninlined_funcs.find(demangled_name) == uninlined_funcs.end()) {
++                spdlog::info("Inlined:{}", demangled_name);
++                inlined_funcs.insert(demangled_name);
+             }
+         }
+ 
+@@ -641,7 +652,9 @@ int main(int argc, char ** argv) {
                                       // caller_str, callee_str - endpoint function names which are used to identify which functions to 
                                       // add as part of the descendants of the indirect calls
                                       allowed_indirect.insert(calledge->edgeFlag);
@@ -103,7 +146,7 @@ index 167f5d4..01b1033 100644
                                       indirect_file.close();
                                   }
  
-@@ -794,7 +806,9 @@ int main(int argc, char ** argv) {
+@@ -794,7 +807,9 @@ int main(int argc, char ** argv) {
                                       // caller_str, callee_str - endpoint function names which are used to identify which functions to 
                                       // add as part of the descendants of the indirect calls
                                       allowed_indirect.insert(calledge->edgeFlag);
@@ -114,6 +157,28 @@ index 167f5d4..01b1033 100644
                                       indirect_file.close();
                                   }
  
+diff --git a/patches/svf/svf.patch b/patches/svf/svf.patch
+new file mode 100644
+index 0000000..40b976b
+--- /dev/null
++++ b/patches/svf/svf.patch
+@@ -0,0 +1,16 @@
++diff --git a/lib/Graphs/ICFG.cpp b/lib/Graphs/ICFG.cpp
++index 2f800b01..a30af381 100644
++--- a/lib/Graphs/ICFG.cpp
+++++ b/lib/Graphs/ICFG.cpp
++@@ -386,6 +386,11 @@ void ICFG::updateCallGraph(PTACallGraph* callgraph)
++             const SVFFunction*  callee = *func_iter;
++             CallBlockNode* CallBlockNode = getCallBlockNode(cs);
++             FunEntryBlockNode* calleeEntryNode = getFunEntryICFGNode(callee);
+++            if (!calleeEntryNode)
+++            {
+++                SVFUtil::errs() << __func__ << ": cannot find entry node for function: " << callee->getName() << "\n";
+++                continue;
+++            }
++             addCallEdge(CallBlockNode, calleeEntryNode, cs);
++ 
++             if (!isExtCall(callee))
 diff --git a/patches/svf/util.cpp b/patches/svf/util.cpp
 index bf87cd6..c4b5462 100644
 --- a/patches/svf/util.cpp
@@ -160,3 +225,74 @@ index bf87cd6..c4b5462 100644
              count += 1;
          }
          // The second token corresponds to the caller string. We don't do anything with it as of now
+diff --git a/third_party/install_svf.sh b/third_party/install_svf.sh
+index 8cec1c7..9826395 100755
+--- a/third_party/install_svf.sh
++++ b/third_party/install_svf.sh
+@@ -7,32 +7,41 @@ function addToPATH {
+   esac
+ }
+ 
++set -xe
++
+ # Get SVF
+ if [ ! -d SVF ]; then
+-	git clone https://github.com/SVF-tools/SVF
+-	cd SVF && git reset --hard a99ee34 && cd -
+-	cp `pwd`/../patches/svf/setup.sh ./SVF/setup.sh
+-	cp `pwd`/../patches/svf/build.sh ./SVF/build.sh
+-
+-	# Link SVF-specific files
+-	rm ./SVF/tools/Example/svf-ex.cpp
+-	ln -s `pwd`/../patches/svf/svf-ex.cpp SVF/tools/Example/svf-ex.cpp
+-
+-	rm ./SVF/include/Graphs/GenericGraph.h
+-	ln -s `pwd`/../patches/svf/GenericGraph.h SVF/include/Graphs/GenericGraph.h
+-
+-	rm ./SVF/tools/Example/CMakeLists.txt
+-	cp `pwd`/../patches/svf/CMakeLists.txt SVF/tools/Example/CMakeLists.txt
+-
+-	ln -s `pwd`/../patches/svf/fence.cpp SVF/tools/Example/fence.cpp
+-	ln -s `pwd`/../patches/svf/util.cpp SVF/tools/Example/util.cpp
+-	ln -s `pwd`/../patches/svf/svf-af.h SVF/include/svf-af.h
+-
+-	if [ ! -d spdlog ]; then
+-		git clone https://github.com/gabime/spdlog 
+-	fi
+-	cp -r spdlog/include/spdlog/ ./SVF/include
+-	cd SVF && source ./build.sh && cd -
++    git clone https://github.com/SVF-tools/SVF
++    cd SVF
++    git reset --hard a99ee34
++    git apply ../../patches/svf/svf.patch
++    cd -
++    cp `pwd`/../patches/svf/setup.sh ./SVF/setup.sh
++    cp `pwd`/../patches/svf/build.sh ./SVF/build.sh
++
++    # Link SVF-specific files
++    rm ./SVF/tools/Example/svf-ex.cpp
++    ln -s `pwd`/../patches/svf/svf-ex.cpp SVF/tools/Example/svf-ex.cpp
++
++    rm ./SVF/include/Graphs/GenericGraph.h
++    ln -s `pwd`/../patches/svf/GenericGraph.h SVF/include/Graphs/GenericGraph.h
++
++    rm ./SVF/tools/Example/CMakeLists.txt
++    cp `pwd`/../patches/svf/CMakeLists.txt SVF/tools/Example/CMakeLists.txt
++
++    ln -s `pwd`/../patches/svf/fence.cpp SVF/tools/Example/fence.cpp
++    ln -s `pwd`/../patches/svf/util.cpp SVF/tools/Example/util.cpp
++    ln -s `pwd`/../patches/svf/svf-af.h SVF/include/svf-af.h
++
++    if [ ! -d spdlog ]; then
++        git clone https://github.com/gabime/spdlog
++        cd spdlog && git reset --hard 2312489bdc304886b4a2eebc8f7f8dc0c4de688f && cd -
++    fi
++    cp -r spdlog/include/spdlog/ ./SVF/include
++
++    set +xe
++    cd SVF && source ./build.sh && cd -
+ else
+-	cd SVF && source ./setup.sh && cd -
++    set +xe
++    cd SVF && source ./setup.sh && cd -
+ fi
