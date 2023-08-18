@@ -18,7 +18,7 @@ export -f contains_element
 magma_image_name() {
     # shellcheck disable=SC2153
     local img="magma/$FUZZER/$TARGET"
-    if [ -n "$BUG" ] && [ -z "$DIRECTED_DYNAMIC" ]; then
+    if [ -n "$BUG" ]; then
         img="$img/$BUG"
     fi
     # image repository names have to be lowercase
@@ -75,11 +75,10 @@ setup_defaults() {
             continue
         fi
         # XXX: make variables that could interfere with other scripts/functions local
-        local DIRECTED DIRECTED_DYNAMIC
+        local DIRECTED
         # shellcheck disable=SC1090
         source "$MAGMA/fuzzers/$IFUZZER/configrc"
         declare -g "${IFUZZER}_DIRECTED"="$DIRECTED"
-        declare -g "${IFUZZER}_DIRECTED_DYNAMIC"="$DIRECTED_DYNAMIC"
     done
     popd &>/dev/null
 

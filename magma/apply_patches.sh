@@ -4,6 +4,7 @@ set -e
 ##
 # Pre-requirements:
 # - env TARGET: path to target work dir
+# + env APPLY_ALL: if set, apply all patches (default: unset)
 ##
 
 cd "$TARGET/repo"
@@ -63,7 +64,9 @@ fi
 # sort patches by name and place the target patch at the end
 bugs=()
 while read -r -d '' patch; do
-    if [ -z "$MAGMA_BUG" ] || [ "$(patch_name "$patch")" != "$MAGMA_BUG" ]; then
+    if [ -z "$MAGMA_BUG" ]; then
+        bugs+=("$patch")
+    elif [ -n "$APPLY_ALL" ] && [ "$(patch_name "$patch")" != "$MAGMA_BUG" ]; then
         bugs+=("$patch")
     fi
 done < <(find_patches "$bugs_dir")
