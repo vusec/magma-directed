@@ -231,6 +231,16 @@ cleanup() {
 
 trap cleanup EXIT
 
+unique_bugs() {
+    local program bug bugs
+    for program in "${PROGRAMS[@]}"; do
+        IFS=' ' read -r -a bugs <<<"$(get_var_or_default "$FUZZER" "$TARGET" "$program" BUGS)"
+        for bug in "${bugs[@]}"; do
+            echo "$bug"
+        done
+    done | sort -u
+}
+
 # schedule campaigns
 for FUZZER in "${FUZZERS[@]}"; do
     export FUZZER NUMWORKERS
@@ -244,10 +254,11 @@ for FUZZER in "${FUZZERS[@]}"; do
 
         # build the Docker image
 
+        IFS=' ' read -r -a PROGRAMS <<<"$(get_var_or_default "$FUZZER" "$TARGET" PROGRAMS)"
+
         if [ -n "$DIRECTED" ]; then
             BUGS_BUILT=()
-            IFS=' ' read -r -a BUGS <<<"$(get_var_or_default "$FUZZER" "$TARGET" BUGS)"
-            for BUG in "${BUGS[@]}"; do
+            while read -r BUG; do
                 if [ -z "$SKIP_BUILDS" ]; then
                     export BUG
                     IMG_NAME=$(magma_image_name)
@@ -259,7 +270,7 @@ for FUZZER in "${FUZZERS[@]}"; do
                     fi
                 fi
                 BUGS_BUILT+=("$BUG")
-            done
+            done < <(unique_bugs)
             # unset so it does not get passed to a call to build.sh that does not need it
             unset BUG
         elif [ -z "$SKIP_BUILDS" ]; then
@@ -276,13 +287,16 @@ for FUZZER in "${FUZZERS[@]}"; do
             continue
         fi
 
-        IFS=' ' read -r -a PROGRAMS <<<"$(get_var_or_default "$FUZZER" "$TARGET" PROGRAMS)"
         for PROGRAM in "${PROGRAMS[@]}"; do
             export PROGRAM ARGS
             ARGS="$(get_var_or_default "$FUZZER" "$TARGET" "$PROGRAM" ARGS)"
 
             if [ -n "$DIRECTED" ]; then
-                for BUG in "${BUGS_BUILT[@]}"; do
+                IFS=' ' read -r -a BUGS <<<"$(get_var_or_default "$FUZZER" "$TARGET" "$PROGRAM" BUGS)"
+                for BUG in "${BUGS[@]}"; do
+                    if [[ "${BUGS_BUILT[*]}" != *"$BUG"* ]]; then
+                        continue
+                    fi
                     export BUG
                     echo_time "Starting campaigns for bug $BUG: $PROGRAM $ARGS"
                     for ((i = 0; i < REPEAT; i++)); do

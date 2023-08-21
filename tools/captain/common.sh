@@ -89,7 +89,7 @@ setup_defaults() {
         shopt -u nullglob
     fi
 
-    local ITARGET BUGS IBUG IPROGRAM
+    local ITARGET IPROGRAM IBUG
     for ITARGET in "${DEFAULT_TARGETS[@]}"; do
         # shellcheck disable=SC1090
         source "$MAGMA/targets/$ITARGET/configrc"
@@ -100,21 +100,21 @@ setup_defaults() {
             declare -g -a "DEFAULT_${ITARGET}_PROGRAMS"="($PROGRAMS_str)"
         fi
 
-        if [ -z "$(meta_var DEFAULT "$ITARGET" BUGS)" ]; then
-            pushd "$ITARGET/patches/bugs" &>/dev/null
-            shopt -s nullglob
-            BUGS=(*)
-            shopt -u nullglob
-            popd &>/dev/null
-            for IBUG in "${!BUGS[@]}"; do
-                BUGS[$IBUG]="${BUGS[$IBUG]%.patch}"
-            done
-            # shellcheck disable=SC2153
-            local BUGS_str="${BUGS[*]}"
-            declare -g -a "DEFAULT_${ITARGET}_BUGS"="($BUGS_str)"
-        fi
+        local target_bugs
+        pushd "$ITARGET/patches/bugs" &>/dev/null
+        shopt -s nullglob
+        target_bugs=(*)
+        shopt -u nullglob
+        popd &>/dev/null
+        for IBUG in "${!target_bugs[@]}"; do
+            target_bugs[$IBUG]="${target_bugs[$IBUG]%.patch}"
+        done
 
         for IPROGRAM in "${PROGRAMS[@]}"; do
+            if [ -z "$(meta_var DEFAULT "$ITARGET" "$IPROGRAM" BUGS)" ]; then
+                local BUGS_str="${target_bugs[*]}"
+                declare -g -a "DEFAULT_${ITARGET}_${IPROGRAM}_BUGS"="($BUGS_str)"
+            fi
             local varname="${IPROGRAM}_ARGS"
             declare -g "DEFAULT_${ITARGET}_${IPROGRAM}_ARGS"="${!varname}"
         done
