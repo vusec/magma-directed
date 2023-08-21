@@ -105,7 +105,7 @@ while true; do
         fi
     else
         rm "$MONITOR/tmp"
-        [ -n "$monitor_stop_on_bug_out" ] && rm "$monitor_stop_on_bug_out"
+        [ -f "$monitor_stop_on_bug_out" ] && rm "$monitor_stop_on_bug_out"
     fi
     counter=$((counter + POLL))
     sleep "$POLL"
