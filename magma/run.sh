@@ -86,7 +86,7 @@ if [ -n "$STOP_ON_BUG" ]; then
     if [ -z "$MAGMA_BUG" ]; then
         echo "warning: STOP_ON_BUG is not supported for undirected campaigns" >&2
     else
-        monitor_stop_on_bug_out="$MONITOR/stop_on_bug.out"
+        monitor_stop_on_bug_out="$SHARED/stop_on_bug.out"
         monitor_flags+=(--select-bug "$MAGMA_BUG" --select-bug-out "$monitor_stop_on_bug_out")
     fi
 fi
