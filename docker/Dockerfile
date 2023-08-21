@@ -99,15 +99,18 @@ ENV LIBS="-l:magma.o -lrt"
 ENV LDFLAGS="-L$OUT -g"
 
 COPY --chown=magma:magma \
-    ${magma_root}/${magma_path}/all_findings.sh \
     ${magma_root}/${magma_path}/directed.sh \
     ${magma_root}/${magma_path}/gather_resusage.sh \
-    ${magma_root}/${magma_path}/run.sh \
-    ${magma_root}/${magma_path}/runonce.sh \
     ${magma_root}/${magma_path}/sanitizers.sh \
     ${magma_root}/${magma_path}/showlinenum.awk \
     ${MAGMA}/
 
 RUN "${MAGMA}/gather_resusage.sh" "${FUZZER}/instrument.sh"
+
+COPY --chown=magma:magma \
+    ${magma_root}/${magma_path}/all_findings.sh \
+    ${magma_root}/${magma_path}/run.sh \
+    ${magma_root}/${magma_path}/runonce.sh \
+    ${MAGMA}/
 
 ENTRYPOINT "${MAGMA}/run.sh"
