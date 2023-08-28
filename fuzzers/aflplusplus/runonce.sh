@@ -12,12 +12,8 @@
 
 export TIMELIMIT=0.1s
 
-run_limited()
-{
-    ${@:1}
-    test $? -lt 128
-}
-export -f run_limited
+source "$MAGMA/sanitizers.sh"
+set_sanitizer_options 0
 
 args="${ARGS/@@/"'$1'"}"
 if [ -z "$args" ]; then
@@ -25,4 +21,4 @@ if [ -z "$args" ]; then
 fi
 
 timeout -s KILL --preserve-status $TIMELIMIT bash -c \
-    "run_limited '$OUT/afl/$PROGRAM' $args"
+    "'$OUT/afl/$PROGRAM' $args"

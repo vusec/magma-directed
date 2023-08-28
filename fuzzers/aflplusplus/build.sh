@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -ex
 
 ##
 # Pre-requirements:
@@ -12,11 +12,13 @@ if [ ! -d "$FUZZER/repo" ]; then
 fi
 
 cd "$FUZZER/repo"
-export CC=clang
-export CXX=clang++
+LLVM_VERSION=15
+export CC=clang-$LLVM_VERSION
+export CXX=clang++-$LLVM_VERSION
+export LLVM_CONFIG=llvm-config-$LLVM_VERSION
 export AFL_NO_X86=1
 export PYTHON_INCLUDE=/
-make -j$(nproc) || exit 1
-make -C utils/aflpp_driver || exit 1
+make -j"$(nproc)"
+make -C utils/aflpp_driver
 
 mkdir -p "$OUT/afl" "$OUT/cmplog"
