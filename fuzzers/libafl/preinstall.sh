@@ -18,4 +18,6 @@ rm -f llvm.sh
 
 apt-get clean -y
 
-curl https://sh.rustup.rs | sudo -u magma HOME="$MAGMA_HOME" sh -s -- -y --profile minimal
+curl https://sh.rustup.rs \
+    | sudo -u magma HOME="$MAGMA_HOME" \
+        sh -s -- -y --profile minimal --default-toolchain 1.71
