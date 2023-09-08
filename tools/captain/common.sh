@@ -63,6 +63,14 @@ get_var_or_default() {
 }
 export -f get_var_or_default
 
+setup_defaults_for_fuzzer() {
+    # XXX: make variables that could interfere with other scripts/functions local
+    local DIRECTED
+    # shellcheck disable=SC1090
+    source "$MAGMA/fuzzers/$1/configrc"
+    declare -g "$1_DIRECTED"="$DIRECTED"
+}
+
 setup_defaults() {
     pushd "$MAGMA/fuzzers" &>/dev/null
     shopt -s nullglob
@@ -74,11 +82,7 @@ setup_defaults() {
         if [ ! -f "$MAGMA/fuzzers/$IFUZZER/configrc" ]; then
             continue
         fi
-        # XXX: make variables that could interfere with other scripts/functions local
-        local DIRECTED
-        # shellcheck disable=SC1090
-        source "$MAGMA/fuzzers/$IFUZZER/configrc"
-        declare -g "${IFUZZER}_DIRECTED"="$DIRECTED"
+        setup_defaults_for_fuzzer "$IFUZZER"
     done
     popd &>/dev/null
 
