@@ -1,11 +1,12 @@
 # shellcheck shell=bash disable=SC2034
 
-if [ ! -f "$MAGMA_BUG_FILE" ]; then
-    printf >&2 "MAGMA_BUG_FILE=%q is not a file\n" "$MAGMA_BUG_FILE"
-    exit 1
-fi
 
 store_target_lines() {
+    if [ ! -f "$MAGMA_BUG_FILE" ]; then
+        printf >&2 "MAGMA_BUG_FILE=%q is not a file\n" "$MAGMA_BUG_FILE"
+        return 1
+    fi
+
     local file=${1:-"$OUT/directed_targets.txt"}
     "$MAGMA"/showlinenum.awk path=1 show_header=0 <"$MAGMA_BUG_FILE" \
         | gawk -F':' -v repo_path="$TARGET/repo/" \
@@ -18,4 +19,16 @@ store_target_lines() {
         printf >&2 "No targets found in %q\n" "$MAGMA_BUG_FILE"
         return 1
     fi
+}
+
+store_magma_log_lines() {
+    if [ -z "$MAGMA_BUG" ]; then
+        printf >&2 "MAGMA_BUG is not set\n"
+        return 1
+    fi
+
+    local file=${1:-"$OUT/directed_targets.txt"}
+    grep -rIn 'MAGMA_LOG("'"$MAGMA_BUG" "$TARGET/repo" \
+        | sed -E 's/^(.+:[0-9]+):.*$/\1/' \
+        | sort -u >"$file"
 }

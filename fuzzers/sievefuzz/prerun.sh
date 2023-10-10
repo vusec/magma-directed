@@ -19,11 +19,12 @@ if [ -z "$MAGMA_PRERUN_DONE" ]; then
     exit 1
 fi
 
-grep -rIn 'MAGMA_LOG("'"$MAGMA_BUG" "$TARGET/repo" \
-    | sed -E 's/^(.+:[0-9]+):.*$/\1/' \
-    | sort -u >"$OUT/target_locations.txt"
+# shellcheck source=magma/directed.sh
+source "$MAGMA/directed.sh"
+MAGMA_LOG_LINES="$OUT/magma_log_locations.txt"
+store_magma_log_lines "$MAGMA_LOG_LINES" || exit 1
 
-if [ "$(wc -l <"$OUT/target_locations.txt")" -eq 0 ]; then
+if [ "$(wc -l <"$MAGMA_LOG_LINES")" -eq 0 ]; then
     echo "No target locations found for bug $MAGMA_BUG." >&2
     exit 1
 fi
@@ -41,7 +42,7 @@ while read -r location; do
         echo "error: could not find function for $location" >&2
         exit 1
     fi
-done <"$OUT/target_locations.txt"
+done <"$MAGMA_LOG_LINES"
 
 if [ "$(wc -l < <(sort "$OUT/target_functions.txt" | uniq))" -ne 1 ]; then
     echo "No unique target function found for bug $MAGMA_BUG." >&2
