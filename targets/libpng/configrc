@@ -1,1 +1,2 @@
 PROGRAMS=(libpng_read_fuzzer)
+PROGRAM_LIBS[libpng_read_fuzzer]='-lz'
