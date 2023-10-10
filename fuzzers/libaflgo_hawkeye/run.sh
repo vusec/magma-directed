@@ -9,6 +9,8 @@
 # - env FUZZARGS: extra arguments to pass to the fuzzer
 ##
 
+trap '' SIGTTIN SIGTTOU
+
 # shellcheck source=magma/sanitizers.sh
 source "$MAGMA/sanitizers.sh"
 common_sanitizer_options[handle_segv]=0
