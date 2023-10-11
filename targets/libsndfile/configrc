@@ -1,3 +1,3 @@
 PROGRAMS=(sndfile_fuzzer)
-
+PROGRAM_LIBS[sndfile_fuzzer]='-lmp3lame -lmpg123 -lFLAC -lvorbis -lvorbisenc -lopus -logg'
 sndfile_fuzzer_ARGS="@@"
