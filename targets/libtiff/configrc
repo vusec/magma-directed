@@ -1,3 +1,8 @@
 PROGRAMS=(tiff_read_rgba_fuzzer tiffcp)
 
+__common_libs='-lm -lz -ljpeg -Wl,-Bstatic -llzma -Wl,-Bdynamic'
+PROGRAM_LIBS[tiff_read_rgba_fuzzer]="$__common_libs"
+PROGRAM_LIBS[tiffcp]="$__common_libs"
+unset __common_libs
+
 tiffcp_ARGS="-M @@ tmp.out"
