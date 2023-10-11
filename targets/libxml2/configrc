@@ -1,3 +1,8 @@
 PROGRAMS=(libxml2_xml_read_memory_fuzzer xmllint)
 
+__common_libs='-lz -llzma -lm'
+PROGRAM_LIBS[libxml2_xml_read_memory_fuzzer]="$__common_libs"
+PROGRAM_LIBS[xmllint]="$__common_libs"
+unset __common_libs
+
 xmllint_ARGS="--valid --oldxml10 --push --memory @@"
