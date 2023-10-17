@@ -14,11 +14,11 @@ fi
 cd "$FUZZER/repo"
 BEACON=$(pwd) ./scripts/build.sh
 
-# build external SV
-cd "$FUZZER/SVF"
-git reset --hard
-sed -i '118a\
-    _pta->getICFG()->updateCallGraph(_pta->getPTACallGraph());\
-    _pta->getICFG()->dump("icfg_final");
-' svf/lib/WPA/WPAPass.cpp
-LLVM_DIR=$(llvm-config-15 --prefix) ./build.sh
+# # build external SVF
+# cd "$FUZZER/SVF"
+# git reset --hard
+# sed -i '118a\
+#     _pta->getICFG()->updateCallGraph(_pta->getPTACallGraph());\
+#     _pta->getICFG()->dump("icfg_final");
+# ' svf/lib/WPA/WPAPass.cpp
+# LLVM_DIR=$(llvm-config-15 --prefix) ./build.sh
