@@ -38,7 +38,7 @@ $CC $CFLAGS -I. \
     "$TARGET/repo/test/ossfuzz.c" \
     -o "$OUT/sqlite3_fuzz" \
     .libs/libsqlite3.a \
-    $LDFLAGS $LIBS -pthread -ldl -lm
+    $LDFLAGS $LIBS -lpthread -ldl -lm
 
 if [ -n "$REQUIRE_GET_BITCODE" ]; then
     $REQUIRE_GET_BITCODE "$OUT/sqlite3_fuzz"

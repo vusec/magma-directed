@@ -1,1 +1,2 @@
 PROGRAMS=(sqlite3_fuzz)
+PROGRAM_LIBS[sqlite3_fuzz]='-lpthread -ldl -lm -lz'
