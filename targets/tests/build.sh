@@ -20,5 +20,9 @@ make -j"$(nproc)" all
 cp -v bin/* "$OUT/"
 
 if [ -n "$REQUIRE_GET_BITCODE" ]; then
-    $REQUIRE_GET_BITCODE "$OUT/test01"
+    # shellcheck source=/dev/null
+    source "$TARGET/configrc"
+    for p in "${PROGRAMS[@]}"; do
+        $REQUIRE_GET_BITCODE "$OUT/$p"
+    done
 fi
