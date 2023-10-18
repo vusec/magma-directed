@@ -2,6 +2,10 @@
 # This script comes from Beacon's repository and has been cleaned up and
 # modified to work with newer versions of SVF.
 
+# This should make it work on:
+# - LLVM 15
+# - SVF 0e9dabd9478f4f638cc54ecfeb3ba2191e7eab33
+
 import argparse
 import time
 import logging
