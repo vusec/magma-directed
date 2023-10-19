@@ -50,6 +50,7 @@ MODERN_BITCODE="$OUT/modern_bitcode"
 # extract target locations
 # shellcheck source=magma/directed.sh
 source "$MAGMA/directed.sh"
+TARGET_NAME="$(basename "$TARGET")"
 TARGETS_FILE="$OUT/beacon_targets.txt"
 store_magma_log_lines "$TARGETS_FILE"
 TARGETS_JUST_FILENAME="$(rev "$TARGETS_FILE" | cut -d/ -f1 | rev)"
@@ -88,10 +89,13 @@ meta_var() {
     echo "${value[@]}"
 }
 
-TARGET_NAME="$(basename "$TARGET")"
-if [[ -v "${TARGET_NAME}_BUILD_PROGRAMS" ]]; then
-    # shellcheck disable=SC2207     # items should not contain spaces
-    PROGRAMS=($(meta_var "${TARGET_NAME}_BUILD_PROGRAMS"))
+if [ -f "$FUZZER/configrc" ]; then
+    # shellcheck source=/dev/null
+    source "$FUZZER/configrc"
+    if [[ -v "${TARGET_NAME}_BUILD_PROGRAMS" ]]; then
+        # shellcheck disable=SC2207     # items should not contain spaces
+        PROGRAMS=($(meta_var "${TARGET_NAME}_BUILD_PROGRAMS"))
+    fi
 fi
 
 for p in "${PROGRAMS[@]}"; do
