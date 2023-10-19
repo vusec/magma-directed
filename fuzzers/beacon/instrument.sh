@@ -48,11 +48,18 @@ MODERN_BITCODE="$OUT/modern_bitcode"
 )
 
 # extract target locations
+
 # shellcheck source=magma/directed.sh
 source "$MAGMA/directed.sh"
+
+MAGMA_LOG_LINES="$OUT/magma_log_lines.txt"
+store_magma_log_lines "$MAGMA_LOG_LINES"
+
 TARGET_NAME="$(basename "$TARGET")"
 TARGETS_FILE="$OUT/beacon_targets.txt"
-store_magma_log_lines "$TARGETS_FILE"
+make_magma_log_lines_unique "$TARGET_NAME" "$MAGMA_LOG_LINES" \
+    >"$TARGETS_FILE"
+
 TARGETS_JUST_FILENAME="$(rev "$TARGETS_FILE" | cut -d/ -f1 | rev)"
 
 set +x
@@ -70,7 +77,7 @@ if [ "$(wc -l <"$TARGETS_FILE")" -eq 0 ]; then
 fi
 
 if [ "$(wc -l < <(sort "$TARGETS_FILE" | uniq))" -ne 1 ]; then
-    echo "No unique target function found." >&2
+    echo "No unique target location found." >&2
     exit 1
 fi
 
