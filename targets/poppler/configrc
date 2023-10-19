@@ -1,4 +1,10 @@
 PROGRAMS=(pdf_fuzzer pdfimages pdftoppm)
 
+__common_libs='-lz -llzma -ljpeg -lz -lopenjp2 -lpng -ltiff -llcms2 -lm -lpthread -pthread'
+for __p in "${PROGRAMS[@]}"; do
+    PROGRAM_LIBS[$__p]="$__common_libs"
+done
+unset __common_libs __p
+
 pdfimages_ARGS="@@ /tmp/out"
 pdftoppm_ARGS="-mono -cropbox @@"
