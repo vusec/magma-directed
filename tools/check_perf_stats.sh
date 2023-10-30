@@ -9,7 +9,8 @@ set -euo pipefail
 process_libafl() {
     grep 'objectives: 0,' "$1/libafl.log" \
         | tail -n1 \
-        | sed -E 's/.*exec\/sec: ([0-9]+(.[0-9]+)?k?),?.*/\1/'
+        | perl -ne 'print $4 / ((3600*$1)+(60*$2)+$3) . "\n"
+            if /time: (\d+)h-(\d+)m-(\d+)s.+executions: (\d+)/ && ($1 > 0 || $2 > 0 || $3 > 0)'
 }
 
 process_afl() {
@@ -46,10 +47,11 @@ main() {
         tar -xf "$ar" -C "$tmp_dir"
         $fn "$tmp_dir"
         rm -rf "$tmp_dir"
-    done | awk -v n="${#archives[@]}" \
-        'BEGIN {tot=0} {x=strtonum($0)}
+    done \
+        | tee /dev/stderr \
+        | awk 'BEGIN {tot=0; n=0} {x=strtonum($0)}
             /.+k/ {x*=1000} /.+M/ {x*=1000000}
-            {tot+=x} END {print "tot: " (tot/n)}'
+            {if (x > 0) { tot+=x; n++ }} END {print "tot: " (tot/n)}'
 }
 
 main "$@"
