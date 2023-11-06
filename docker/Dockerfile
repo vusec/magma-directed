@@ -63,7 +63,7 @@ COPY --chown=magma:magma ${magma_root}/${fuzzer_path} ${FUZZER}/
 # Docker does not support variables in --mount options
 # synch values with USER_ID and GROUP_ID
 RUN --mount=type=ssh,uid=1000,gid=1000 ${FUZZER}/fetch.sh
-RUN ${FUZZER}/build.sh
+RUN --mount=type=ssh,uid=1000,gid=1000 ${FUZZER}/build.sh
 
 ARG target_name
 ARG target_path=targets/${target_name}
