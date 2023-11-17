@@ -1,1 +1,6 @@
 PROGRAMS=(asn1 asn1parse bignum server client x509)
+__common_libs='-lpthread'
+for __p in "${PROGRAMS[@]}"; do
+    PROGRAM_LIBS[$__p]="$__common_libs"
+done
+unset __common_libs __p
