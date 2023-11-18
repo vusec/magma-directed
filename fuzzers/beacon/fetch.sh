@@ -24,7 +24,7 @@ sed -i '118a\
 # add missing newline
 sed -i '69c\
          O << "Writing " << Filename << "...\n";
-' "$FUZZER/SVF/svf/include/Graph/GraphPrinter.h"
+' "$FUZZER/SVF/svf/include/Graphs/GraphPrinter.h"
 # skip test suite
 # sed -i '124,138d' "$FUZZER/SVF/build.sh"
 # sed -i '44d;57,59d' "$FUZZER/SVF/CMakeLists.txt"
