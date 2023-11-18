@@ -23,7 +23,7 @@ sed -i '118a\
 ' "$FUZZER/SVF/svf/lib/WPA/WPAPass.cpp"
 # add missing newline
 sed -i '69c\
-         O << "Writing " << Filename << "...\n";
+         O << "Writing " << Filename << "...\\n";
 ' "$FUZZER/SVF/svf/include/Graphs/GraphPrinter.h"
 # skip test suite
 # sed -i '124,138d' "$FUZZER/SVF/build.sh"
