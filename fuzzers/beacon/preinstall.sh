@@ -27,6 +27,11 @@ chmod +x llvm.sh
 ./llvm.sh 15
 rm llvm.sh
 
+# install Rust for reachability-fast
+curl https://sh.rustup.rs \
+    | sudo -u magma HOME="$MAGMA_HOME" \
+        sh -s -- -y --profile minimal --default-toolchain 1.74
+
 # # install recent version of cmake to compile SVF
 curl -Lo cmake.tar.gz https://github.com/Kitware/CMake/releases/download/v3.26.4/cmake-3.26.4-linux-x86_64.tar.gz
 tar xf cmake.tar.gz -C /usr/local --strip-components=1
@@ -34,7 +39,7 @@ rm cmake.tar.gz
 
 # install wllvm to extract bitcode and networkx for reachability analysis script
 pip3 install --upgrade pip
-pip3 install wllvm networkx pydot
+pip3 install wllvm # networkx pydot
 
 # clean apt cache
 apt-get clean -y

@@ -115,7 +115,8 @@ for p in "${PROGRAMS[@]}"; do
         "$OUT/$p.bc" --target-file="$TARGETS_FILE" --join-bound=5
 
     "$FUZZER/SVF/Release-build/bin/wpa" -ander -dump-icfg "$MODERN_BITCODE/$p.bc"
-    "$FUZZER/src/icfg_index.py" "$TARGETS_JUST_FILENAME" icfg_final.dot
+    # "$FUZZER/src/icfg_index.py" "$TARGETS_JUST_FILENAME" icfg_final.dot
+    "$FUZZER/reachability-fast" "$TARGETS_JUST_FILENAME" icfg_final.dot bbreaches-external-svf.txt
 
     # -byte \
     # -blocks="$folder/bbreaches.txt" \

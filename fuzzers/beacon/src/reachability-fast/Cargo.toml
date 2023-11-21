@@ -1,0 +1,8 @@
+[package]
+name = "reachability-fast"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0"
+graphviz-rust = { git = "https://github.com/acidghost/graphviz-rust.git", branch = "directed" }
