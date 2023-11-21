@@ -31,6 +31,7 @@ def reachable_node_fast_new(G, node):
     f_trace = []
     b_trace = []
 
+    # node is list of target nodes
     unsolve = node.copy()
     init_func = ""
 
@@ -108,10 +109,12 @@ def pre_processing(g):
         # print(node)
         tmp = node.split(":")
         if len(tmp) > 1:
+            # this node has a context, tmp[0] is node w/o context
             values = aux_edges.get(tmp[0], [])
             values.append(node)
             aux_edges[tmp[0]] = values
 
+    # key is node w/o context, values are nodes with context
     for key, values in aux_edges.items():
         for context in values:
             g.add_edge(key, context)
