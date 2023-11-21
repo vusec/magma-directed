@@ -8,10 +8,30 @@ set -ex
 
 git clone --no-checkout https://github.com/5hadowblad3/Beacon_artifact.git "$FUZZER/repo"
 git -C "$FUZZER/repo" checkout 87bc7f079a970689384ee5c995f8ecc48b7118b5
-sed -i '465a\
+sed -i \
+    -e '465a\
              // skip constexpr stdlib functions\
              && fname.rfind("_ZNSt", 0) == std::string::npos
-' "$FUZZER/repo/Ins/main.cpp"
+' \
+    -e '364c\
+                // std::cout << line << std::endl;
+' \
+    -e '476c\
+                    // std::cout << "new bb" << std::endl;
+' \
+    -e '493c\
+                        // std::cout << "bb_name: " << bb_name << std::endl;
+' \
+    -e '497c\
+                                // std::cout << "filter!" << std::endl;
+' \
+    -e '503c\
+                                // std::cout << "preserve!" << std::endl;
+' \
+    -e '509c\
+                            // std::cout << "empty????" << std::endl;
+' \
+    "$FUZZER/repo/Ins/main.cpp"
 
 # fetch external SVF
 git clone --no-checkout https://github.com/SVF-tools/SVF.git "$FUZZER/SVF"
