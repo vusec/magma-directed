@@ -22,6 +22,10 @@ set -ex
     "$MAGMA/build.sh"
     REQUIRE_GET_BITCODE=extract-bc \
         "$TARGET/build.sh"
+    if [[ "$TARGET" == *"/openssl" ]]; then
+        cp "$TARGET/repo/libcrypto.a" "$OUT/libcrypto.a"
+        cp "$TARGET/repo/libssl.a" "$OUT/libssl.a"
+    fi
 )
 
 MODERN_BITCODE="$OUT/modern_bitcode"
