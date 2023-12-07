@@ -41,13 +41,20 @@ make_magma_log_lines_unique() {
 
     local infile=${1:-"$OUT/directed_targets.txt"}
     (
+        # grep to make sure it's the right line
+        # exec to return with the right exit code
         case ${TARGET} in
         *libtiff)
             case ${MAGMA_BUG} in
             TIF012)
-                # grep to make sure it's the right line
-                # exec to return with the right exit code
                 exec grep -F 'tif_dir.c:313' "$infile"
+                ;;
+            esac
+            ;;
+        *poppler)
+            case ${MAGMA_BUG} in
+            PDF021)
+                exec grep -F 'Stream.cc:609' "$infile"
                 ;;
             esac
             ;;
