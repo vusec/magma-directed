@@ -39,13 +39,14 @@ store_magma_log_lines() {
 make_magma_log_lines_unique() {
     check_env_magma_bug || return 1
 
-    local target_name=$1
-    local infile=${2:-"$OUT/directed_targets.txt"}
+    local infile=${1:-"$OUT/directed_targets.txt"}
     (
-        case ${1} in
-        libtiff)
+        case ${TARGET} in
+        *libtiff)
             case ${MAGMA_BUG} in
             TIF012)
+                # grep to make sure it's the right line
+                # exec to return with the right exit code
                 exec grep -F 'tif_dir.c:313' "$infile"
                 ;;
             esac
@@ -53,4 +54,18 @@ make_magma_log_lines_unique() {
         esac
         cat "$infile"
     )
+}
+
+check_unique_targets() {
+    local file=${1:-"$OUT/directed_targets.txt"}
+
+    if [ "$(wc -l <"$file")" -eq 0 ]; then
+        echo "No target locations found." >&2
+        exit 1
+    fi
+
+    if [ "$(wc -l < <(sort "$file" | uniq))" -ne 1 ]; then
+        echo "No unique target location found." >&2
+        exit 1
+    fi
 }

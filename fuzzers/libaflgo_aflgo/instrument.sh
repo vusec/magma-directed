@@ -16,7 +16,13 @@ AFLGO_FUZZER=aflgo
 export AFLGO_TARGETS="$OUT/aflgo_targets.txt"
 # shellcheck source=magma/directed.sh
 source "$MAGMA/directed.sh"
-store_target_lines "$AFLGO_TARGETS"
+MAGMA_LOG_LINES="$OUT/magma_log_lines.txt"
+store_magma_log_lines "$MAGMA_LOG_LINES"
+make_magma_log_lines_unique "$MAGMA_LOG_LINES" >"$AFLGO_TARGETS"
+printf "\n\n################\nFound %d targets\n" "$(wc -l <"$AFLGO_TARGETS")" >&2
+cat "$AFLGO_TARGETS" >&2
+printf "################\n\n" >&2
+check_unique_targets "$AFLGO_TARGETS"
 
 "$MAGMA/build.sh"
 
