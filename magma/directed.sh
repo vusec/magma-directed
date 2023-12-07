@@ -51,6 +51,13 @@ make_magma_log_lines_unique() {
                 ;;
             esac
             ;;
+        *php)
+            case ${MAGMA_BUG} in
+            PHP011)
+                exec grep -F 'exif.c:2083' "$infile"
+                ;;
+            esac
+            ;;
         *poppler)
             case ${MAGMA_BUG} in
             PDF021)
