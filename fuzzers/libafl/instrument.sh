@@ -11,7 +11,7 @@ set -ex
 ##
 
 "$MAGMA/build.sh"
-SANITIZER_FLAGS="-fsanitize=address"
+SANITIZER_FLAGS="-fsanitize=address -mllvm -asan-stack=0"
 export CC="$FUZZER/repo/fuzzers/fuzzbench/target/release/libafl_cc"
 export CXX="$FUZZER/repo/fuzzers/fuzzbench/target/release/libafl_cxx"
 export CFLAGS="$CFLAGS $SANITIZER_FLAGS --libafl"

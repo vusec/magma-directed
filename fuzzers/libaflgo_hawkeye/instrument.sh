@@ -31,7 +31,7 @@ export AFLGO_CLANG=clang-15
 export CC="libaflgo_${AFLGO_FUZZER}_cc"
 export CXX="libaflgo_${AFLGO_FUZZER}_cxx"
 
-SANITIZERS="-fsanitize=address"
+SANITIZERS="-fsanitize=address -mllvm -asan-stack=0"
 export CFLAGS="$CFLAGS $SANITIZERS"
 export CXXFLAGS="$CXXFLAGS $SANITIZERS"
 
