@@ -8,4 +8,4 @@ set -ex
 
 mkdir -m 0700 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
 git clone --no-checkout git@github.com:vusec/aflgo-new.git "$FUZZER/repo"
-git -C "$FUZZER/repo" checkout a2465d542920ce3a3401b1a77b9d31cc57c4dc71
+git -C "$FUZZER/repo" checkout b5e054930b55e65b2b5c43b9643d69b3e52479b7
