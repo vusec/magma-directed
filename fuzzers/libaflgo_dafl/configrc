@@ -1,0 +1,7 @@
+DIRECTED=1
+libtiff_BUILD_PROGRAMS=(tiff_read_rgba_fuzzer)
+libxml2_BUILD_PROGRAMS=(libxml2_xml_read_memory_fuzzer)
+lua_BUILD_PROGRAMS=(fuzz_lua)
+openssl_BUILD_PROGRAMS=(asn1 server client x509)
+php_BUILD_PROGRAMS=(exif)
+poppler_BUILD_PROGRAMS=(pdf_fuzzer)
