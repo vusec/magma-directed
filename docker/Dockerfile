@@ -109,6 +109,7 @@ RUN "${MAGMA}/gather_resusage.sh" "${FUZZER}/instrument.sh"
 
 COPY --chown=magma:magma \
     ${magma_root}/${magma_path}/all_findings.sh \
+    ${magma_root}/${magma_path}/fix_seeds.sh \
     ${magma_root}/${magma_path}/run.sh \
     ${magma_root}/${magma_path}/runonce.sh \
     ${MAGMA}/

@@ -26,15 +26,14 @@ mkdir -p "$MONITOR"
 cd "$SHARED"
 
 CORPUS="$TARGET/corpus/$PROGRAM"
-# prune the seed corpus for any fault-triggering test-cases
-for seed in "$CORPUS"/*; do
-    out="$("$MAGMA"/runonce.sh "$seed")"
-    code=$?
 
-    if [ $code -ne 0 ]; then
-        echo "$seed: $out"
-        rm "$seed"
-    fi
+# XXX: fix corpus for all fuzzers
+# shellcheck source=magma/fix_seeds.sh
+source "$MAGMA/fix_seeds.sh"
+
+for seed in "${SEEDS_TO_REMOVE[@]}"; do
+    echo "MAGMA deleting seed: $seed"
+    rm "$CORPUS/$seed"
 done
 
 shopt -s nullglob
